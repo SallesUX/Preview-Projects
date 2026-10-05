@@ -13,8 +13,8 @@ export default defineConfig({
         short_name: 'Dule',
         description: 'Cronômetro de contrações, notas e relatório para o trabalho de parto.',
         lang: 'pt-BR',
-        theme_color: '#ffd7d7',
-        background_color: '#fff6f6',
+        theme_color: '#fbf1f4',
+        background_color: '#f9e9ef',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',
@@ -22,7 +22,17 @@ export default defineConfig({
           { src: 'icon.svg', sizes: 'any', type: 'image/svg+xml', purpose: 'any maskable' }
         ]
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,svg,png,woff2}'] }
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,svg,png,woff2}'],
+        // keep Montserrat available offline after the first visit
+        runtimeCaching: [
+          {
+            urlPattern: /^https:\/\/fonts\.(googleapis|gstatic)\.com\/.*/,
+            handler: 'CacheFirst',
+            options: { cacheName: 'google-fonts', expiration: { maxEntries: 20 }, cacheableResponse: { statuses: [0, 200] } },
+          },
+        ],
+      },
     })
   ]
 })

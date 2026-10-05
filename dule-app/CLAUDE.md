@@ -3,7 +3,7 @@
 Personal PWA for a father acting as doula during his wife's labour. UI text is **Brazilian Portuguese**; code/comments in English.
 
 ## Stack
-- Vite + React 19 + TypeScript, plain CSS (`src/styles.css`, CSS variables). Light dusty-rose theme is the default; dark is `:root[data-theme="dark"]`, chosen in Configurações (`Settings.tema`).
+- Vite + React 19 + TypeScript, plain CSS (`src/styles.css`, CSS variables). Light theme (soft pink gradients, pill shapes, Montserrat) is the default; dark is `:root[data-theme="dark"]`, chosen in Configurações (`Settings.tema`).
 - `vite-plugin-pwa` (generateSW) for offline + install. No backend, no login.
 - All data in IndexedDB (`src/db.ts`): stores `events`, `partos`, `audio` (Blobs), `kv` (settings).
 
