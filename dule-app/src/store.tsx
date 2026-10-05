@@ -39,7 +39,7 @@ export const THEME_KEY = 'dule.tema'
 export function applyTheme(tema: Tema | undefined) {
   const dark = tema === 'escuro'
   document.documentElement.dataset.theme = dark ? 'dark' : 'light'
-  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#17121a' : '#f8bcd3')
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#1b1314' : '#ffd7d7')
   try {
     localStorage.setItem(THEME_KEY, dark ? 'escuro' : 'claro')
   } catch {}
