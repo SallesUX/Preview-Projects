@@ -1,7 +1,7 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { db, requestPersistence, uid } from './db'
 import { DEFAULT_SHORTCUTS } from './content'
-import type { DuleEvent, Parto, PhaseId, Settings } from './types'
+import type { DuleEvent, Parto, PhaseId, Settings, Tema } from './types'
 
 interface Store {
   ready: boolean
@@ -33,6 +33,17 @@ export const useStore = () => {
 }
 
 const RUN_KEY = 'dule.running'
+export const THEME_KEY = 'dule.tema'
+
+/** Apply the theme to <html> and remember it so main.tsx can set it before first paint. */
+export function applyTheme(tema: Tema | undefined) {
+  const dark = tema === 'escuro'
+  document.documentElement.dataset.theme = dark ? 'dark' : 'light'
+  document.querySelector('meta[name="theme-color"]')?.setAttribute('content', dark ? '#17121a' : '#f8bcd3')
+  try {
+    localStorage.setItem(THEME_KEY, dark ? 'escuro' : 'claro')
+  } catch {}
+}
 
 const defaultSettings = (partoId: string): Settings => ({
   partoAtivoId: partoId,
@@ -120,6 +131,10 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     navigator.vibrate?.([20, 40, 20])
     return ev
   }
+
+  useEffect(() => {
+    if (settings) applyTheme(settings.tema)
+  }, [settings?.tema])
 
   const setSettings = async (s: Settings) => {
     await db.putSettings(s)

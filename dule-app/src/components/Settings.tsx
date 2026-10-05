@@ -50,6 +50,18 @@ export function Settings({ onBack }: { onBack: () => void }) {
       </header>
 
       <section className="card">
+        <h2>Aparência</h2>
+        <div className="option-list">
+          <button className={`option ${settings.tema !== 'escuro' ? 'sel' : ''}`} onClick={() => patch({ tema: 'claro' })}>
+            ☀️ Claro
+          </button>
+          <button className={`option ${settings.tema === 'escuro' ? 'sel' : ''}`} onClick={() => patch({ tema: 'escuro' })}>
+            🌙 Escuro <small>· bom para o quarto com pouca luz</small>
+          </button>
+        </div>
+      </section>
+
+      <section className="card">
         <h2>Parto</h2>
         <p className="hint">Crie um parto de teste para ensaiar antes do dia. Cada parto tem seu próprio histórico.</p>
         <div className="option-list">

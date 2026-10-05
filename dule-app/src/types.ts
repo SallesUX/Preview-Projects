@@ -61,4 +61,8 @@ export interface Settings {
     humorMin: number
   }
   atalhos: ShortcutDef[]
+  /** UI theme; missing = claro (light) */
+  tema?: Tema
 }
+
+export type Tema = 'claro' | 'escuro'
