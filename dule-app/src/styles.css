@@ -101,13 +101,13 @@ b, strong { font-weight: 600; }
 /* ---------- timer ---------- */
 .timer { display: flex; flex-direction: column; gap: 8px; padding: 10px 12px; }
 .timer-btn {
-  min-height: 96px; border-radius: 999px; background: var(--grad); color: var(--accent-ink); box-shadow: var(--glow);
+  min-height: 150px; border-radius: 999px; background: var(--grad); color: var(--accent-ink); box-shadow: var(--glow);
   display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 2px;
 }
 .timer-btn.running { background: var(--running); color: var(--running-ink); box-shadow: var(--running-glow); animation: breathe 3s ease-in-out infinite; }
-.timer-label { font-size: 24px; font-weight: 500; letter-spacing: 0.02em; }
-.timer-secs { font-size: 32px; font-variant-numeric: tabular-nums; font-weight: 500; }
-.timer-sub { font-size: 14px; opacity: 0.8; }
+.timer-label { font-size: 32px; font-weight: 500; letter-spacing: 0.02em; }
+.timer-secs { font-size: 46px; font-variant-numeric: tabular-nums; font-weight: 500; }
+.timer-sub { font-size: 15px; opacity: 0.8; }
 @keyframes breathe { 50% { filter: brightness(1.12); } }
 .link-btn { background: none; color: var(--muted); text-decoration: underline; min-height: 32px; }
 .timer-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
