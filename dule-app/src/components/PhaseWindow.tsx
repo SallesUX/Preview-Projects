@@ -1,6 +1,8 @@
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useStore } from '../store'
-import { ALERTA_RODAPE, APOIO_EMOCIONAL, PHASES, phaseById } from '../content'
+import { ALERTA_RODAPE, APOIO_EMOCIONAL, GUIA_AVISO, PHASES, phaseById } from '../content'
+import type { PhaseId } from '../types'
+import { Sheet } from './Sheet'
 import { MIN, currentPhase, lastOf } from '../logic'
 
 export function PhaseWindow({ onPick }: { onPick: () => void }) {
@@ -8,6 +10,7 @@ export function PhaseWindow({ onPick }: { onPick: () => void }) {
   const phaseId = useMemo(() => currentPhase(events, now, parto.faseManual), [events, now, parto.faseManual])
   const idx = phaseId ? PHASES.findIndex((p) => p.id === phaseId) : -1
   const phase = phaseId ? phaseById(phaseId) : null
+  const [guideOpen, setGuideOpen] = useState(false)
 
   const dor = lastOf(events, 'dor')
   const humor = lastOf(events, 'humor')
@@ -26,10 +29,16 @@ export function PhaseWindow({ onPick }: { onPick: () => void }) {
 
   return (
     <section className="phase">
-      <button className="phase-head" onClick={onPick}>
-        <small>FASE ATUAL {parto.faseManual ? '(escolhida)' : '(sugerida)'} · toque para mudar</small>
-        <strong>{phase ? phase.nome : 'Aguardando contrações'}</strong>
-      </button>
+      <div className="phase-top">
+        <button className="phase-head" onClick={onPick}>
+          <small>FASE ATUAL {parto.faseManual ? '(escolhida)' : '(sugerida)'} · toque para mudar</small>
+          <strong>{phase ? phase.nome : 'Aguardando contrações'}</strong>
+        </button>
+        <button className="help-btn" onClick={() => setGuideOpen(true)} aria-label="Sobre as fases do trabalho de parto">
+          ?
+        </button>
+      </div>
+      <PhaseGuide open={guideOpen} onClose={() => setGuideOpen(false)} current={phaseId} />
 
       <div className="phase-bar" aria-hidden>
         {PHASES.map((p, i) => (
@@ -86,5 +95,30 @@ export function PhaseWindow({ onPick }: { onPick: () => void }) {
 
       <p className="danger-strip">{ALERTA_RODAPE}</p>
     </section>
+  )
+}
+
+function PhaseGuide({ open, onClose, current }: { open: boolean; onClose: () => void; current: PhaseId | null }) {
+  return (
+    <Sheet open={open} onClose={onClose} title="As fases do trabalho de parto">
+      <p className="hint">{GUIA_AVISO}</p>
+      <ol className="guide">
+        {PHASES.map((p) => (
+          <li key={p.id} className={p.id === current ? 'now' : ''}>
+            <h3>
+              {p.nome}
+              {p.id === current && <span className="badge">agora</span>}
+            </h3>
+            <p>
+              <b>Contrações:</b> {p.guia.contracoes}
+            </p>
+            <p>
+              <b>Duração:</b> {p.guia.duracao}
+            </p>
+            <p className="guide-app">No app: {p.guia.noApp}</p>
+          </li>
+        ))}
+      </ol>
+    </Sheet>
   )
 }

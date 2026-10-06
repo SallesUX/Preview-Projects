@@ -7,6 +7,8 @@ export interface PhaseInfo {
   acontecendo: string
   recomendacoes: string[]
   alivio: string[]
+  /** short reference shown in the "?" guide: typical contractions, how long the phase lasts, how the app suggests it */
+  guia: { contracoes: string; duracao: string; noApp: string }
 }
 
 export const PHASES: PhaseInfo[] = [
@@ -21,6 +23,11 @@ export const PHASES: PhaseInfo[] = [
       'Conferir a mala da maternidade',
     ],
     alivio: ['Banho morno', 'Deitar de lado com almofada entre as pernas', 'Respiração lenta'],
+    guia: {
+      contracoes: 'Irregulares, de 20 a 45 s, com intervalos longos e variados (mais de 10–20 min). Costumam diminuir com repouso ou banho.',
+      duracao: 'De horas a alguns dias, ainda sem dilatação importante.',
+      noApp: 'Intervalo médio acima de 20 min ou contrações irregulares.',
+    },
   },
   {
     id: 'latente',
@@ -33,6 +40,11 @@ export const PHASES: PhaseInfo[] = [
       'Caminhar, usar a bola, banho morno',
     ],
     alivio: ['Rebolar na bola', 'Banho morno', 'Massagem nas costas'],
+    guia: {
+      contracoes: 'De 30 a 45 s, a cada 5 a 20 min, ficando mais regulares.',
+      duracao: 'Até uns 6 cm de dilatação. Costuma levar de 6 a 12 h ou mais no primeiro filho.',
+      noApp: 'Intervalo médio entre 5 e 20 min.',
+    },
   },
   {
     id: 'ativa',
@@ -49,6 +61,11 @@ export const PHASES: PhaseInfo[] = [
       'Chuveiro quente na lombar',
       'Respirar junto, soltando o ar devagar',
     ],
+    guia: {
+      contracoes: 'De 45 a 60 s, a cada 3 a 5 min, fortes e regulares.',
+      duracao: 'De 6 a 8 cm. Em geral de 4 a 8 h.',
+      noApp: 'Intervalo médio entre 3 e 5 min.',
+    },
   },
   {
     id: 'transicao',
@@ -61,6 +78,11 @@ export const PHASES: PhaseInfo[] = [
       '"Não aguento" significa que está perto',
     ],
     alivio: ['Pano frio no rosto', 'Uma contração de cada vez', 'Respirar junto, no ritmo dela'],
+    guia: {
+      contracoes: 'De 60 a 90 s, a cada 2 a 3 min, quase sem pausa entre elas.',
+      duracao: 'De 8 a 10 cm. Curta: de 15 min a 1–2 h.',
+      noApp: 'Intervalo médio abaixo de 3 min.',
+    },
   },
   {
     id: 'expulsivo',
@@ -73,6 +95,11 @@ export const PHASES: PhaseInfo[] = [
       'Oferecer água e lembrar o plano de parto',
     ],
     alivio: ['Posição que ela escolher', 'Descansar entre as contrações', 'Encorajar em voz baixa'],
+    guia: {
+      contracoes: 'De 60 a 90 s, a cada 2 a 5 min, com vontade de fazer força.',
+      duracao: 'Dilatação completa até o nascimento. De minutos a 2–3 h.',
+      noApp: 'Escolhida por vocês (toque no título da fase).',
+    },
   },
   {
     id: 'nascimento',
@@ -85,8 +112,16 @@ export const PHASES: PhaseInfo[] = [
       'Proteger o momento de visitas',
     ],
     alivio: [],
+    guia: {
+      contracoes: 'Leves, para soltar a placenta.',
+      duracao: 'A placenta sai em geral de 5 a 30 min depois do bebê.',
+      noApp: 'Escolhida por vocês (toque no título da fase).',
+    },
   },
 ]
+
+export const GUIA_AVISO =
+  'Valores típicos, que variam muito de pessoa para pessoa. Quem confirma a fase é a equipe, pelo exame.'
 
 export const phaseById = (id: PhaseId) => PHASES.find((p) => p.id === id)!
 
