@@ -22,6 +22,8 @@ interface Store {
   setFaseManual: (f: PhaseId | null) => Promise<void>
   newParto: (nome: string) => Promise<void>
   switchParto: (id: string) => Promise<void>
+  /** delete every record of the active parto and start it over */
+  resetParto: () => Promise<void>
   reload: () => Promise<void>
 }
 
@@ -152,6 +154,18 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     await setSettings({ ...settings!, partoAtivoId: p.id })
     setEvents([])
   }
+  const resetParto = async () => {
+    const all = await db.eventsByParto(parto.id)
+    for (const e of all) {
+      await db.deleteEvent(e.id)
+      if (e.audioId) await db.deleteAudio(e.audioId)
+    }
+    const p = { ...parto, faseManual: null }
+    await db.putParto(p)
+    setPartos((ps) => ps.map((x) => (x.id === p.id ? p : x)))
+    cancelContraction()
+    setEvents([])
+  }
   const switchParto = async (id: string) => {
     await setSettings({ ...settings!, partoAtivoId: id })
     setEvents(await db.eventsByParto(id))
@@ -176,6 +190,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setSettings,
     setFaseManual,
     newParto,
+    resetParto,
     switchParto,
     reload: load,
   }

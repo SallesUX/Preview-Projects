@@ -4,10 +4,12 @@ import { exportBackup, importBackup, uid } from '../db'
 import type { Settings as S } from '../types'
 
 export function Settings({ onBack }: { onBack: () => void }) {
-  const { settings, setSettings, partos, parto, newParto, switchParto, reload } = useStore()
+  const { settings, setSettings, partos, parto, events, newParto, switchParto, resetParto, reload } = useStore()
   const [novo, setNovo] = useState('')
   const [atalho, setAtalho] = useState('')
   const [msg, setMsg] = useState<string | null>(null)
+  const [confirmReset, setConfirmReset] = useState(false)
+  const [resetMsg, setResetMsg] = useState<string | null>(null)
   const file = useRef<HTMLInputElement>(null)
 
   const patch = (p: Partial<S>) => setSettings({ ...settings, ...p })
@@ -215,6 +217,39 @@ export function Settings({ onBack }: { onBack: () => void }) {
           />
         </div>
         {msg && <p className="hint">{msg}</p>}
+      </section>
+
+      <section className="card">
+        <h2>Zerar</h2>
+        <p className="hint">
+          Apaga todos os registros de <b>{parto.nome}</b> (contrações, notas, áudios, dor, humor e fase) e começa do zero.
+          Configurações e atalhos continuam. Não dá para desfazer: exporte um backup antes se quiser guardar.
+        </p>
+        {!confirmReset ? (
+          <button className="danger-btn" onClick={() => { setResetMsg(null); setConfirmReset(true) }}>
+            Zerar
+          </button>
+        ) : (
+          <div className="confirm-box" role="alert">
+            <p>
+              Apagar {events.length} {events.length === 1 ? 'registro' : 'registros'} de {parto.nome}?
+            </p>
+            <div className="row">
+              <button onClick={() => setConfirmReset(false)}>Cancelar</button>
+              <button
+                className="danger-btn"
+                onClick={async () => {
+                  await resetParto()
+                  setConfirmReset(false)
+                  setResetMsg('Tudo zerado. Pode começar de novo.')
+                }}
+              >
+                Sim, zerar
+              </button>
+            </div>
+          </div>
+        )}
+        {resetMsg && <p className="hint">{resetMsg}</p>}
       </section>
 
       <p className="hint pad">

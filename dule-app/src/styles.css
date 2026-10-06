@@ -234,6 +234,11 @@ textarea.field { resize: vertical; }
 .shortcut-list { list-style: none; padding: 0 !important; display: flex; flex-direction: column; gap: 4px; }
 .shortcut-list li { display: flex; align-items: center; gap: 4px; background: var(--surface-2); border-radius: 14px; padding-left: 14px; }
 .shortcut-list li span { flex: 1; }
+.danger-btn { background: var(--danger-bg); color: var(--danger-text); border: 1px solid var(--danger); border-radius: 999px; font-weight: 600; min-height: 48px; }
+.confirm-box { display: flex; flex-direction: column; gap: 10px; background: var(--danger-bg); border-radius: 16px; padding: 14px; }
+.confirm-box p { margin: 0; font-weight: 600; }
+.confirm-box .row > * { flex: 1; }
+.confirm-box .danger-btn { background: var(--danger); color: #fff; }
 
 .ctable { width: calc(100% - 24px); margin: 0 12px; border-collapse: collapse; font-variant-numeric: tabular-nums; }
 .ctable th, .ctable td { padding: 12px 8px; border-bottom: 1px solid var(--line); text-align: left; }
