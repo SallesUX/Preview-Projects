@@ -1,8 +1,7 @@
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useStore } from '../store'
 import { ALERTA_RODAPE, APOIO_EMOCIONAL, GUIA_AVISO, PHASES, phaseById } from '../content'
 import type { PhaseId } from '../types'
-import { Sheet } from './Sheet'
 import { MIN, currentPhase, lastOf } from '../logic'
 
 export function PhaseWindow({ onPick }: { onPick: () => void }) {
@@ -99,26 +98,35 @@ export function PhaseWindow({ onPick }: { onPick: () => void }) {
 }
 
 function PhaseGuide({ open, onClose, current }: { open: boolean; onClose: () => void; current: PhaseId | null }) {
+  useEffect(() => {
+    if (!open) return
+    const k = (e: KeyboardEvent) => e.key === 'Escape' && onClose()
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [open, onClose])
+  if (!open) return null
   return (
-    <Sheet open={open} onClose={onClose} title="As fases do trabalho de parto">
-      <p className="hint">{GUIA_AVISO}</p>
-      <ol className="guide">
-        {PHASES.map((p) => (
-          <li key={p.id} className={p.id === current ? 'now' : ''}>
-            <h3>
-              {p.nome}
-              {p.id === current && <span className="badge">agora</span>}
-            </h3>
-            <p>
-              <b>Contrações:</b> {p.guia.contracoes}
-            </p>
-            <p>
-              <b>Duração:</b> {p.guia.duracao}
-            </p>
-            <p className="guide-app">No app: {p.guia.noApp}</p>
-          </li>
-        ))}
-      </ol>
-    </Sheet>
+    <div className="pop-backdrop" onClick={onClose}>
+      <div className="pop" role="dialog" aria-modal="true" aria-label="Fases" onClick={(e) => e.stopPropagation()}>
+        <div className="pop-head">
+          <h2>Fases</h2>
+          <button className="pop-close" onClick={onClose} aria-label="Fechar">
+            ✕
+          </button>
+        </div>
+        <dl className="pop-list">
+          {PHASES.map((p) => (
+            <div key={p.id} className={p.id === current ? 'now' : ''}>
+              <dt>{p.curto}</dt>
+              <dd>
+                {p.guia.contracoes}
+                <span>{p.guia.duracao}</span>
+              </dd>
+            </div>
+          ))}
+        </dl>
+        <p className="pop-foot">{GUIA_AVISO}</p>
+      </div>
+    </div>
   )
 }

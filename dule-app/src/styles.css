@@ -119,16 +119,25 @@ b, strong { font-weight: 600; }
 .phase { background: var(--surface); box-shadow: var(--shadow); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 8px; }
 .phase-top { display: grid; grid-template-columns: 1fr auto; align-items: end; gap: 8px; }
 .help-btn {
-  width: 36px; height: 36px; min-height: 36px; padding: 0; border-radius: 50%; margin-bottom: 2px;
-  background: var(--grad-soft); color: var(--accent); font-weight: 600; font-size: 17px; border: 1px solid var(--line);
+  width: 22px; height: 22px; min-height: 22px; padding: 0; border-radius: 50%; margin-bottom: 6px;
+  background: transparent; color: var(--muted); border: 1px solid currentColor; font-size: 12px; line-height: 1; opacity: 0.8; position: relative;
 }
-.guide { list-style: none; margin: 0; padding: 0; display: flex; flex-direction: column; gap: 10px; }
-.guide li { background: var(--surface-2); border-radius: 18px; padding: 14px 16px; display: flex; flex-direction: column; gap: 4px; }
-.guide li.now { background: var(--grad-soft); outline: 2px solid var(--accent); }
-.guide h3 { font-size: 16px; display: flex; align-items: center; gap: 8px; }
-.guide p { margin: 0; font-size: 14px; line-height: 1.45; }
-.guide-app { color: var(--muted); font-size: 13px !important; }
-.badge { background: var(--grad); color: var(--accent-ink); font-size: 11px; font-weight: 600; border-radius: 999px; padding: 2px 8px; }
+/* keep a 44px tap area around the small icon */
+.help-btn::after { content: ''; position: absolute; inset: -11px; }
+.help-btn:hover, .help-btn:focus-visible { opacity: 1; color: var(--accent); }
+.pop-backdrop { position: fixed; inset: 0; background: var(--backdrop); display: grid; place-items: center; padding: 24px; z-index: 40; }
+.pop { width: 100%; max-width: 300px; background: var(--surface); border-radius: 20px; padding: 16px 18px 14px; box-shadow: var(--shadow); }
+.pop-head { display: flex; align-items: center; justify-content: space-between; margin-bottom: 6px; }
+.pop-head h2 { font-size: 15px; font-weight: 600; }
+.pop-close { min-height: 28px; width: 28px; padding: 0; background: transparent; color: var(--muted); font-size: 13px; }
+.pop-list { margin: 0; display: flex; flex-direction: column; }
+.pop-list > div { display: grid; grid-template-columns: 78px 1fr; gap: 8px; padding: 7px 0; border-top: 1px solid var(--line); font-size: 13px; line-height: 1.35; }
+.pop-list > div:first-child { border-top: 0; }
+.pop-list dt { font-weight: 600; }
+.pop-list dd { margin: 0; color: var(--text); }
+.pop-list dd span { display: block; color: var(--muted); font-size: 12px; }
+.pop-list > div.now dt { color: var(--accent); }
+.pop-foot { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
 .phase-head { background: none; padding: 0; text-align: left; display: flex; flex-direction: column; align-items: flex-start; }
 .phase-head small { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; }
 .phase-head strong { font-size: 22px; font-weight: 600; }
