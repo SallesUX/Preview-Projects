@@ -101,8 +101,11 @@ export const GUIA_AVISO =
 
 export const phaseById = (id: PhaseId) => PHASES.find((p) => p.id === id)!
 
-export const ALERTA_RODAPE =
-  'Sangramento, líquido verde, bebê mexendo menos, febre ou dor de cabeça forte: ligue para a equipe.'
+export const ALERTA_RODAPE = {
+  titulo: 'Atenção a estes acontecimentos:',
+  sinais: 'Sangramento, líquido verde, bebê mexendo menos, febre ou dor de cabeça forte:',
+  acao: 'ligue para a equipe.',
+}
 
 export const PAIN_BANDS = [
   { min: 0, max: 0, nome: 'Sem dor', desc: 'tranquila' },

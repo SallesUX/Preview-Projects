@@ -92,7 +92,12 @@ export function PhaseWindow({ onPick }: { onPick: () => void }) {
         </div>
       )}
 
-      <p className="danger-strip">{ALERTA_RODAPE}</p>
+      <div className="danger-strip">
+        <small>{ALERTA_RODAPE.titulo}</small>
+        <p>
+          {ALERTA_RODAPE.sinais} <b>{ALERTA_RODAPE.acao}</b>
+        </p>
+      </div>
     </section>
   )
 }
