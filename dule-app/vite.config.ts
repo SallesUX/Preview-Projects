@@ -14,7 +14,7 @@ export default defineConfig({
         description: 'Cronômetro de contrações, notas e relatório para o trabalho de parto.',
         lang: 'pt-BR',
         theme_color: '#fbf1f4',
-        background_color: '#f9e9ef',
+        background_color: '#fbebe6',
         display: 'standalone',
         orientation: 'portrait',
         start_url: '/',

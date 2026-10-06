@@ -1,7 +1,7 @@
 :root {
-  /* light (default) — soft pink gradients on near-white, pill shapes, pink-tinted glow */
-  --bg: #f9e9ef;
-  --page: linear-gradient(180deg, #fff 0%, #fbf1f4 55%, #f9e9ef 100%);
+  /* light (default) — soft pink-to-pale-orange gradients on near-white, pill shapes, pink-tinted glow */
+  --bg: #fbebe6;
+  --page: linear-gradient(180deg, #fff 0%, #fdf1ef 55%, #fbebe6 100%);
   --surface: #ffffff;
   --surface-2: #fbf0f3;
   --glass: rgba(255, 255, 255, 0.78);
@@ -10,17 +10,17 @@
   --muted: #a1969d;
   --accent: #e9789a;
   --accent-ink: #ffffff;
-  --grad: linear-gradient(120deg, #e3638a 0%, #f19ab2 100%);
-  --grad-soft: linear-gradient(120deg, #fde3ea 0%, #fff1f4 100%);
+  --grad: linear-gradient(120deg, #e3668b 0%, #ee9098 55%, #f7b993 100%);
+  --grad-soft: linear-gradient(120deg, #fde4ea 0%, #fff0e6 100%);
   --accent-soft: rgba(233, 120, 154, 0.3);
-  --glow: 0 8px 20px rgba(227, 99, 138, 0.22);
+  --glow: 0 8px 20px rgba(236, 130, 130, 0.24);
   --hero: var(--glass);
   --hero-ink: #3a3338;
   --bubble: var(--grad);
   --bubble-ink: #ffffff;
   --bubble-meta: rgba(255, 255, 255, 0.8);
-  --running: linear-gradient(120deg, #ff8f8a 0%, #ffbf8f 100%);
-  --running-solid: #ffa68c;
+  --running: linear-gradient(120deg, #ff7f6e 0%, #ffa36a 100%);
+  --running-solid: #ff9070;
   --running-ink: #4a2218;
   --running-glow: 0 10px 24px rgba(255, 143, 120, 0.4);
   --running-bg: #fff3ec;
@@ -47,7 +47,7 @@
   --muted: #b3a5ae;
   --accent: #f08aa8;
   --accent-ink: #ffffff;
-  --grad: linear-gradient(120deg, #d9567f 0%, #ee8eab 100%);
+  --grad: linear-gradient(120deg, #d9587f 0%, #e5838c 55%, #eda88a 100%);
   --grad-soft: linear-gradient(120deg, #3a2533 0%, #2e2531 100%);
   --accent-soft: rgba(240, 138, 168, 0.3);
   --glow: 0 10px 24px rgba(217, 86, 127, 0.35);
