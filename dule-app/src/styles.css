@@ -110,10 +110,10 @@ b, strong { font-weight: 600; }
 .timer-sub { font-size: 15px; opacity: 0.8; }
 @keyframes breathe { 50% { filter: brightness(1.12); } }
 .link-btn { background: none; color: var(--muted); text-decoration: underline; min-height: 32px; }
-.timer-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
-.timer-stats div { background: var(--surface); box-shadow: var(--shadow); border-radius: 18px; padding: 10px 6px; text-align: center; }
-.timer-stats b { display: block; font-size: 16px; font-weight: 600; font-variant-numeric: tabular-nums; }
-.timer-stats small { color: var(--muted); font-size: 11px; line-height: 1.2; display: block; }
+.timer-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 5px; }
+.timer-stats div { background: var(--surface); box-shadow: var(--shadow); border-radius: 14px; padding: 6px 4px; text-align: center; }
+.timer-stats b { display: block; font-size: 14px; font-weight: 600; font-variant-numeric: tabular-nums; }
+.timer-stats small { color: var(--muted); font-size: 10px; line-height: 1.15; display: block; }
 
 /* ---------- phase window ---------- */
 .phase { background: var(--surface); box-shadow: var(--shadow); border-radius: var(--radius); padding: 18px; display: flex; flex-direction: column; gap: 8px; }
