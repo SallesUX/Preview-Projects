@@ -1,11 +1,11 @@
 /**
  * Minimal IndexedDB wrapper. Everything stays on the device.
- * Stores: events (DuleEvent), partos (Parto), audio (Blob by id), kv (settings).
+ * Stores: events (DuleEvent), partos (Parto), audio (Blob by id), kv (settings), users (Usuario).
  */
-import type { DuleEvent, Parto, Settings } from './types'
+import type { DuleEvent, Parto, Settings, Usuario } from './types'
 
 const DB_NAME = 'dule'
-const DB_VERSION = 1
+const DB_VERSION = 2
 
 let dbPromise: Promise<IDBDatabase> | null = null
 
@@ -22,6 +22,7 @@ function open(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('partos')) db.createObjectStore('partos', { keyPath: 'id' })
       if (!db.objectStoreNames.contains('audio')) db.createObjectStore('audio')
       if (!db.objectStoreNames.contains('kv')) db.createObjectStore('kv')
+      if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'id' })
     }
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
@@ -61,9 +62,15 @@ export const db = {
   getAudio: (id: string) => tx<Blob | undefined>('audio', 'readonly', (s) => s.get(id)),
   deleteAudio: (id: string) => tx('audio', 'readwrite', (s) => s.delete(id)),
 
-  // settings
-  getSettings: () => tx<Settings | undefined>('kv', 'readonly', (s) => s.get('settings')),
-  putSettings: (v: Settings) => tx('kv', 'readwrite', (s) => s.put(v, 'settings')),
+  // settings (one per user; the un-suffixed key is the pre-accounts legacy value)
+  getSettings: (userId?: string) =>
+    tx<Settings | undefined>('kv', 'readonly', (s) => s.get(userId ? `settings:${userId}` : 'settings')),
+  putSettings: (v: Settings, userId?: string) =>
+    tx('kv', 'readwrite', (s) => s.put(v, userId ? `settings:${userId}` : 'settings')),
+
+  // users
+  users: () => tx<Usuario[]>('users', 'readonly', (s) => s.getAll()),
+  putUser: (u: Usuario) => tx('users', 'readwrite', (s) => s.put(u)),
 }
 
 export const uid = () =>
@@ -82,8 +89,12 @@ const blobToDataUrl = (b: Blob) =>
     r.readAsDataURL(b)
   })
 
-export async function exportBackup(): Promise<Blob> {
-  const [events, partos, settings] = await Promise.all([db.allEvents(), db.partos(), db.getSettings()])
+/** Backup of one user's partos (with their events and audio). */
+export async function exportBackup(userId: string): Promise<Blob> {
+  const partos = (await db.partos()).filter((p) => p.userId === userId)
+  const ids = new Set(partos.map((p) => p.id))
+  const events = (await db.allEvents()).filter((e) => ids.has(e.partoId))
+  const settings = await db.getSettings(userId)
   const audio: Record<string, string> = {}
   for (const e of events) {
     if (e.audioId) {
@@ -95,14 +106,15 @@ export async function exportBackup(): Promise<Blob> {
   return new Blob([JSON.stringify(data)], { type: 'application/json' })
 }
 
-export async function importBackup(file: File) {
+export async function importBackup(file: File, userId: string) {
   const data = JSON.parse(await file.text())
   if (data.app !== 'dule') throw new Error('Arquivo não é um backup do Dule.app')
-  for (const p of data.partos ?? []) await db.putParto(p)
+  // imported partos belong to whoever is logged in
+  for (const p of data.partos ?? []) await db.putParto({ ...p, userId })
   for (const e of data.events ?? []) await db.putEvent(e)
   for (const [id, url] of Object.entries<string>(data.audio ?? {})) {
     const blob = await (await fetch(url)).blob()
     await db.putAudio(id, blob)
   }
-  if (data.settings) await db.putSettings(data.settings)
+  if (data.settings) await db.putSettings(data.settings, userId)
 }

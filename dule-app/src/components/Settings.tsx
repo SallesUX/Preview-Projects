@@ -4,7 +4,7 @@ import { exportBackup, importBackup, uid } from '../db'
 import type { Settings as S } from '../types'
 
 export function Settings({ onBack }: { onBack: () => void }) {
-  const { settings, setSettings, partos, parto, events, newParto, switchParto, resetParto, reload } = useStore()
+  const { settings, setSettings, partos, parto, events, newParto, switchParto, resetParto, reload, usuario, logout } = useStore()
   const [novo, setNovo] = useState('')
   const [atalho, setAtalho] = useState('')
   const [msg, setMsg] = useState<string | null>(null)
@@ -24,7 +24,7 @@ export function Settings({ onBack }: { onBack: () => void }) {
   }
 
   const doExport = async () => {
-    const blob = await exportBackup()
+    const blob = await exportBackup(usuario.id)
     const a = document.createElement('a')
     a.href = URL.createObjectURL(blob)
     a.download = `dule-backup-${new Date().toISOString().slice(0, 16).replace(':', 'h')}.json`
@@ -33,7 +33,7 @@ export function Settings({ onBack }: { onBack: () => void }) {
   }
   const doImport = async (f: File) => {
     try {
-      await importBackup(f)
+      await importBackup(f, usuario.id)
       await reload()
       setMsg('Backup importado.')
     } catch (e) {
@@ -50,6 +50,16 @@ export function Settings({ onBack }: { onBack: () => void }) {
         <h1>Configurações</h1>
         <span />
       </header>
+
+      <section className="card">
+        <h2>Conta</h2>
+        <div className="account-row">
+          <span>
+            Conectado como <b>{usuario.nome}</b>
+          </span>
+          <button onClick={logout}>Sair</button>
+        </div>
+      </section>
 
       <section className="card">
         <h2>Aparência</h2>
