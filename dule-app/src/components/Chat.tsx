@@ -24,8 +24,84 @@ export function AudioPlayer({ audioId }: { audioId: string }) {
 
 const dayKey = (t: number) => new Date(t).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })
 
+/** Fires `onLong` after a ~0.5 s press; the click that follows a long press is swallowed. */
+function useLongPress(onLong: () => void, ms = 500) {
+  const timer = useRef<number | null>(null)
+  const fired = useRef(false)
+  const clear = () => {
+    if (timer.current != null) window.clearTimeout(timer.current)
+    timer.current = null
+  }
+  return {
+    fired,
+    handlers: {
+      onPointerDown: () => {
+        fired.current = false
+        clear()
+        timer.current = window.setTimeout(() => {
+          fired.current = true
+          navigator.vibrate?.(20)
+          onLong()
+        }, ms)
+      },
+      onPointerUp: clear,
+      onPointerLeave: clear,
+      onPointerCancel: clear,
+      onContextMenu: (ev: React.MouseEvent) => ev.preventDefault(),
+    },
+  }
+}
+
+function ContractionPill({ e, onEdit, onAskDelete }: { e: DuleEvent; onEdit: () => void; onAskDelete: () => void }) {
+  const { fired, handlers } = useLongPress(onAskDelete)
+  return (
+    <button
+      className="pill"
+      {...handlers}
+      onClick={() => {
+        if (fired.current) return
+        onEdit()
+      }}
+    >
+      ⏱ {fmtClock(e.inicio)} · contração de {durSec(e)} s
+    </button>
+  )
+}
+
+function DeleteContraction({ e, onClose }: { e: DuleEvent; onClose: () => void }) {
+  const { removeEvent } = useStore()
+  useEffect(() => {
+    const k = (ev: KeyboardEvent) => ev.key === 'Escape' && onClose()
+    window.addEventListener('keydown', k)
+    return () => window.removeEventListener('keydown', k)
+  }, [onClose])
+  return (
+    <div className="pop-backdrop" onClick={onClose}>
+      <div className="pop" role="dialog" aria-modal="true" aria-label="Excluir medição" onClick={(ev) => ev.stopPropagation()}>
+        <h2 className="pop-title">Excluir esta medição?</h2>
+        <p className="pop-text">
+          Contração das {fmtClock(e.inicio)}, de {durSec(e)} s.
+        </p>
+        <div className="pop-actions">
+          <button onClick={onClose}>Cancelar</button>
+          <button
+            className="pop-danger"
+            onClick={async () => {
+              await removeEvent(e)
+              onClose()
+            }}
+          >
+            Excluir
+          </button>
+        </div>
+      </div>
+    </div>
+  )
+}
+
 export function Chat({ onEdit }: { onEdit: (e: DuleEvent) => void }) {
   const { events } = useStore()
+  const [toDelete, setToDelete] = useState<DuleEvent | null>(null)
   const end = useRef<HTMLDivElement>(null)
   const count = events.length
   const prev = useRef(count)
@@ -46,29 +122,30 @@ export function Chat({ onEdit }: { onEdit: (e: DuleEvent) => void }) {
 
   let lastDay = ''
   return (
-    <section className="chat" aria-label="Linha do tempo">
-      {events.map((e) => {
-        const d = dayKey(e.inicio)
-        const sep = d !== lastDay ? <div className="day-sep">{d}</div> : null
-        lastDay = d
-        return (
-          <div key={e.id}>
-            {sep}
-            {e.tipo === 'contracao' ? (
-              <button className="pill" onClick={() => onEdit(e)}>
-                ⏱ {fmtClock(e.inicio)} · contração de {durSec(e)} s
-              </button>
-            ) : (
-              <button className={`bubble ${bubbleClass(e)}`} onClick={() => onEdit(e)}>
-                <BubbleBody e={e} />
-                <time>{fmtClock(e.inicio)}</time>
-              </button>
-            )}
-          </div>
-        )
-      })}
-      <div ref={end} />
-    </section>
+    <>
+      <section className="chat" aria-label="Linha do tempo">
+        {events.map((e) => {
+          const d = dayKey(e.inicio)
+          const sep = d !== lastDay ? <div className="day-sep">{d}</div> : null
+          lastDay = d
+          return (
+            <div key={e.id}>
+              {sep}
+              {e.tipo === 'contracao' ? (
+                <ContractionPill e={e} onEdit={() => onEdit(e)} onAskDelete={() => setToDelete(e)} />
+              ) : (
+                <button className={`bubble ${bubbleClass(e)}`} onClick={() => onEdit(e)}>
+                  <BubbleBody e={e} />
+                  <time>{fmtClock(e.inicio)}</time>
+                </button>
+              )}
+            </div>
+          )
+        })}
+        <div ref={end} />
+      </section>
+      {toDelete && <DeleteContraction e={toDelete} onClose={() => setToDelete(null)} />}
+    </>
   )
 }
 

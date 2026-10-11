@@ -137,6 +137,11 @@ b, strong { font-weight: 600; }
 .pop-list dd { margin: 0; color: var(--text); }
 .pop-list dd span { display: block; color: var(--muted); font-size: 12px; }
 .pop-list > div.now dt { color: var(--accent); }
+.pop-title { font-size: 16px; font-weight: 600; margin: 2px 0 4px; }
+.pop-text { margin: 0 0 14px; font-size: 14px; color: var(--muted); }
+.pop-actions { display: grid; grid-template-columns: 1fr 1fr; gap: 8px; }
+.pop-actions button { border-radius: 999px; }
+.pop-danger { background: var(--danger); color: #fff; font-weight: 600; }
 .pop-foot { margin: 8px 0 0; font-size: 11px; color: var(--muted); }
 .phase-head { background: none; padding: 0; text-align: left; display: flex; flex-direction: column; align-items: flex-start; }
 .phase-head small { color: var(--muted); font-size: 11px; letter-spacing: 0.08em; }
@@ -172,7 +177,7 @@ b, strong { font-weight: 600; }
 .chat > div { display: flex; flex-direction: column; }
 .chat.empty { color: var(--muted); text-align: center; font-size: 14px; }
 .day-sep { align-self: center; font-size: 12px; color: var(--muted); margin: 8px 0 2px; text-transform: capitalize; }
-.pill { align-self: center; min-height: 30px; font-size: 12px; background: var(--surface); border: 0; box-shadow: var(--shadow); color: var(--muted); border-radius: 999px; }
+.pill { -webkit-touch-callout: none; user-select: none; -webkit-user-select: none; align-self: center; min-height: 30px; font-size: 12px; background: var(--surface); border: 0; box-shadow: var(--shadow); color: var(--muted); border-radius: 999px; }
 .bubble {
   align-self: flex-end; max-width: 85%; text-align: left; padding: 10px 14px 6px; border-radius: 20px 20px 6px 20px;
   background: var(--bubble); color: var(--bubble-ink); box-shadow: var(--glow); display: flex; flex-direction: column; gap: 2px; min-height: 0;
