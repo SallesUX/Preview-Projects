@@ -25,6 +25,9 @@ interface Store {
   /** delete every record of the active parto and start it over */
   resetParto: () => Promise<void>
   reload: () => Promise<void>
+  /** logged-in account */
+  usuario: { id: string; nome: string }
+  logout: () => void
 }
 
 const Ctx = createContext<Store | null>(null)
@@ -34,7 +37,6 @@ export const useStore = () => {
   return s
 }
 
-const RUN_KEY = 'dule.running'
 export const THEME_KEY = 'dule.tema'
 
 /** Apply the theme to <html> and remember it so main.tsx can set it before first paint. */
@@ -54,7 +56,16 @@ const defaultSettings = (partoId: string): Settings => ({
   atalhos: DEFAULT_SHORTCUTS,
 })
 
-export function StoreProvider({ children }: { children: ReactNode }) {
+export function StoreProvider({
+  usuario,
+  onLogout,
+  children,
+}: {
+  usuario: { id: string; nome: string }
+  onLogout: () => void
+  children: ReactNode
+}) {
+  const RUN_KEY = `dule.running:${usuario.id}`
   const [ready, setReady] = useState(false)
   const [settings, setSettingsState] = useState<Settings | null>(null)
   const [partos, setPartos] = useState<Parto[]>([])
@@ -72,23 +83,29 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [running])
 
   const load = useCallback(async () => {
-    let ps = await db.partos()
-    let st = await db.getSettings()
+    const all = await db.partos()
+    let ps = all.filter((p) => p.userId === usuario.id)
+    // data from before accounts existed goes to the first person who logs in
+    const orfaos = all.filter((p) => !p.userId)
+    for (const p of orfaos) {
+      const own = { ...p, userId: usuario.id }
+      await db.putParto(own)
+      ps.push(own)
+    }
+    let st = (await db.getSettings(usuario.id)) ?? (orfaos.length ? await db.getSettings() : undefined)
     if (ps.length === 0) {
-      const p: Parto = { id: uid(), nome: 'Nosso parto', criadoEm: Date.now(), faseManual: null }
+      const p: Parto = { id: uid(), nome: 'Nosso parto', criadoEm: Date.now(), faseManual: null, userId: usuario.id }
       await db.putParto(p)
       ps = [p]
     }
-    if (!st) {
-      st = defaultSettings(ps[0].id)
-      await db.putSettings(st)
-    }
+    if (!st) st = defaultSettings(ps[0].id)
     if (!ps.find((p) => p.id === st!.partoAtivoId)) st = { ...st, partoAtivoId: ps[0].id }
+    await db.putSettings(st, usuario.id)
     setPartos(ps.sort((a, b) => a.criadoEm - b.criadoEm))
     setSettingsState(st)
     setEvents(await db.eventsByParto(st.partoAtivoId))
     setReady(true)
-  }, [])
+  }, [usuario.id])
 
   useEffect(() => {
     load()
@@ -139,7 +156,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
   }, [settings?.tema])
 
   const setSettings = async (s: Settings) => {
-    await db.putSettings(s)
+    await db.putSettings(s, usuario.id)
     setSettingsState(s)
   }
   const setFaseManual = async (f: PhaseId | null) => {
@@ -148,7 +165,7 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     setPartos((ps) => ps.map((x) => (x.id === p.id ? p : x)))
   }
   const newParto = async (nome: string) => {
-    const p: Parto = { id: uid(), nome, criadoEm: Date.now(), faseManual: null }
+    const p: Parto = { id: uid(), nome, criadoEm: Date.now(), faseManual: null, userId: usuario.id }
     await db.putParto(p)
     setPartos((ps) => [...ps, p])
     await setSettings({ ...settings!, partoAtivoId: p.id })
@@ -193,6 +210,8 @@ export function StoreProvider({ children }: { children: ReactNode }) {
     resetParto,
     switchParto,
     reload: load,
+    usuario,
+    logout: onLogout,
   }
   return <Ctx.Provider value={value}>{children}</Ctx.Provider>
 }

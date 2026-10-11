@@ -40,6 +40,18 @@ export interface Parto {
   criadoEm: number
   /** manual override for the phase (null = automatic) */
   faseManual: PhaseId | null
+  /** owner (Usuario.id); missing on data created before accounts existed */
+  userId?: string
+}
+
+export interface Usuario {
+  id: string
+  nome: string
+  /** lower-cased name, used to find the account at login */
+  chave: string
+  senhaHash: string
+  sal: string
+  criadoEm: number
 }
 
 export type PhaseId = 'prodromos' | 'latente' | 'ativa' | 'transicao' | 'expulsivo' | 'nascimento'
