@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useStore } from '../store'
-import { contractions, durSec, fmtClock, fmtMin } from '../logic'
+import { contractions, durSec, fmtClock, fmtMin, fmtSeg } from '../logic'
 import type { DuleEvent } from '../types'
 
 export function ContractionsList({ onBack, onEdit }: { onBack: () => void; onEdit: (e: DuleEvent) => void }) {
@@ -31,7 +31,7 @@ export function ContractionsList({ onBack, onEdit }: { onBack: () => void; onEdi
             {rows.map(({ c, interval }) => (
               <tr key={c.id} onClick={() => onEdit(c)}>
                 <td>{fmtClock(c.inicio)}</td>
-                <td>{durSec(c)} s</td>
+                <td>{fmtSeg(durSec(c))}</td>
                 <td>{interval != null ? fmtMin(interval) : '—'}</td>
               </tr>
             ))}

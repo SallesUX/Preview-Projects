@@ -116,6 +116,17 @@ export const fmtSpan = (totalMin: number) => {
   return h ? `${dias} ${h}${nb}h` : dias
 }
 
+/** Seconds as "45 s", or in minutes from 60 s: "1 min 05 s", "2 min" (and hours via fmtSpan from 60 min). */
+export const fmtSeg = (sec: number | null) => {
+  if (sec == null) return '—'
+  const s = Math.max(0, Math.round(sec))
+  const nb = '\u00a0'
+  if (s < 60) return `${s}${nb}s`
+  if (s >= 3600) return fmtSpan(s / 60)
+  const r = s % 60
+  return r ? `${Math.floor(s / 60)}${nb}min ${String(r).padStart(2, '0')}${nb}s` : `${s / 60}${nb}min`
+}
+
 export const fmtMin = (min: number | null) => {
   if (min == null) return '—'
   if (min < 1) return `${Math.round(min * 60)} s`
@@ -132,7 +143,7 @@ export const fmtDuration = (ms: number) => fmtSpan(ms / MIN)
 
 /** One-line human description of any event (chat bubbles + report). */
 export function describe(e: DuleEvent): string {
-  if (e.tipo === 'contracao') return `Contração de ${durSec(e)} s`
+  if (e.tipo === 'contracao') return `Contração de ${fmtSeg(durSec(e))}`
   if (e.tipo === 'texto') return e.texto ?? ''
   if (e.tipo === 'audio') return e.texto ? `Áudio: "${e.texto}"` : 'Áudio'
   const extra = (s?: string) => (s ? ` — ${s}` : '')
@@ -190,7 +201,7 @@ export function buildReport(events: DuleEvent[], now: number, periodoMin: number
   const resumoParts: string[] = []
   if (s.count >= 2) {
     resumoParts.push(
-      `Contrações a cada ${fmtMin(s.avgIntervalMin)}, durando ${Math.round(s.avgDurationSec ?? 0)} s`,
+      `Contrações a cada ${fmtMin(s.avgIntervalMin)}, durando ${fmtSeg(s.avgDurationSec ?? 0)}`,
     )
   } else resumoParts.push(`${s.count} contração(ões) no período`)
   if (first) resumoParts.push(`início ${fmtAgo(first.inicio, now)}`)
@@ -218,7 +229,7 @@ export function buildReport(events: DuleEvent[], now: number, periodoMin: number
     periodoMin,
     resumo: resumoParts.join(' · ') + '.',
     marcos,
-    contr: { count: s.count, avgI: fmtMin(s.avgIntervalMin), avgD: s.avgDurationSec ? `${Math.round(s.avgDurationSec)} s` : '—', trend: trend(cs) },
+    contr: { count: s.count, avgI: fmtMin(s.avgIntervalMin), avgD: s.avgDurationSec ? fmtSeg(s.avgDurationSec) : '—', trend: trend(cs) },
     dor: {
       ultimo: dores.at(-1),
       max: dores.length ? Math.max(...dores.map((d) => Number(d.valor))) : null,

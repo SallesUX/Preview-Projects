@@ -1,6 +1,6 @@
 import { useMemo } from 'react'
 import { useStore } from '../store'
-import { contractions, durSec, fmtMMSS, fmtMin, inWindow, statsFor } from '../logic'
+import { contractions, durSec, fmtMMSS, fmtMin, fmtSeg, inWindow, statsFor } from '../logic'
 
 export function Timer({ onStopped }: { onStopped: () => void }) {
   const { running, now, events, startContraction, stopContraction, cancelContraction, readOnly } = useStore()
@@ -45,7 +45,7 @@ export function Timer({ onStopped }: { onStopped: () => void }) {
       )}
       <div className="timer-stats">
         <div>
-          <b>{last ? `${durSec(last)} s` : '—'}</b>
+          <b>{last ? fmtSeg(durSec(last)) : '—'}</b>
           <small>última duração</small>
         </div>
         <div>
@@ -57,7 +57,7 @@ export function Timer({ onStopped }: { onStopped: () => void }) {
           <small>intervalo médio 1 h</small>
         </div>
         <div>
-          <b>{hour.avgDurationSec != null ? `${Math.round(hour.avgDurationSec)} s` : '—'}</b>
+          <b>{fmtSeg(hour.avgDurationSec)}</b>
           <small>duração média · {hour.count}×</small>
         </div>
       </div>

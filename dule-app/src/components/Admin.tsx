@@ -4,7 +4,7 @@ import { adminLiberado } from '../sync'
 import { StoreProvider } from '../store'
 import App from '../App'
 import { phaseById } from '../content'
-import { MIN, contractions, currentPhase, durSec, fmtAgo, fmtClock, fmtMin, inWindow, statsFor } from '../logic'
+import { MIN, contractions, currentPhase, durSec, fmtAgo, fmtClock, fmtMin, fmtSeg, inWindow, statsFor } from '../logic'
 import type { DuleEvent, Parto, Usuario } from '../types'
 
 interface Linha {
@@ -89,12 +89,12 @@ export function Admin({ onLogout, nuvem }: { onLogout: () => void; nuvem: boolea
     for (const { p, cs, hora, fase } of porParto) {
       out.push(`${nomeDe(p.userId)} · ${p.nome}`)
       out.push(
-        `  ${cs.length} contrações · fase: ${fase ? phaseById(fase).nome : '—'} · última hora: a cada ${fmtMin(hora.avgIntervalMin)}, ${hora.avgDurationSec != null ? Math.round(hora.avgDurationSec) + ' s' : '—'}`,
+        `  ${cs.length} contrações · fase: ${fase ? phaseById(fase).nome : '—'} · última hora: a cada ${fmtMin(hora.avgIntervalMin)}, ${fmtSeg(hora.avgDurationSec)}`,
       )
     }
     out.push('', 'Data/hora · usuário · duração · intervalo')
     for (const l of linhas)
-      out.push(`${fmtData(l.c.inicio)} · ${l.dono} · ${durSec(l.c)} s · ${l.intervalo != null ? fmtMin(l.intervalo) : '—'}`)
+      out.push(`${fmtData(l.c.inicio)} · ${l.dono} · ${fmtSeg(durSec(l.c))} · ${l.intervalo != null ? fmtMin(l.intervalo) : '—'}`)
     return out.join('\n')
   }
 
@@ -282,7 +282,7 @@ export function Admin({ onLogout, nuvem }: { onLogout: () => void; nuvem: boolea
                     <small>intervalo 1 h</small>
                   </div>
                   <div>
-                    <b>{hora.avgDurationSec != null ? `${Math.round(hora.avgDurationSec)} s` : '—'}</b>
+                    <b>{fmtSeg(hora.avgDurationSec)}</b>
                     <small>duração 1 h</small>
                   </div>
                   <div>
@@ -327,7 +327,7 @@ export function Admin({ onLogout, nuvem }: { onLogout: () => void; nuvem: boolea
                       {l.dono}
                       <small>{l.parto.nome}</small>
                     </td>
-                    <td>{durSec(l.c)} s</td>
+                    <td>{fmtSeg(durSec(l.c))}</td>
                     <td>{l.intervalo != null ? fmtMin(l.intervalo) : '—'}</td>
                   </tr>
                 ))}

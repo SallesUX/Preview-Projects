@@ -9,7 +9,7 @@ import { Report } from './components/Report'
 import { ContractionsList } from './components/ContractionsList'
 import { Settings } from './components/Settings'
 import { BOLSA_CORES, POSICOES, phaseById } from './content'
-import { MIN, alertTriggered, contractions, currentPhase, describe, lastOf } from './logic'
+import { MIN, alertTriggered, contractions, currentPhase, describe, fmtSeg, lastOf } from './logic'
 import type { DuleEvent, ShortcutDef } from './types'
 
 type Screen = 'main' | 'report' | 'list' | 'settings'
@@ -142,7 +142,7 @@ function Main({ go, onEdit }: { go: (s: Screen) => void; onEdit: (e: DuleEvent) 
           <div className="banner alert-511" role="alert">
             <b>Hora de ligar para a maternidade</b>
             <span>
-              Contrações a cada ≤ {settings.alerta.intervaloMin} min, durando ~{settings.alerta.duracaoSeg} s, há{' '}
+              Contrações a cada ≤ {settings.alerta.intervaloMin} min, durando ~{fmtSeg(settings.alerta.duracaoSeg)}, há{' '}
               {settings.alerta.janelaMin} min.
             </span>
             <button onClick={() => setAlertDismissedAt(now)}>Ok</button>

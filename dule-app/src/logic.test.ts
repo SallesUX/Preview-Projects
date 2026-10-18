@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alertTriggered, buildReport, statsFor, suggestPhase, trend, fmtMin, fmtAgo, fmtSpan } from './logic'
+import { alertTriggered, buildReport, statsFor, suggestPhase, trend, fmtMin, fmtAgo, fmtSpan, fmtSeg } from './logic'
 import type { DuleEvent } from './types'
 
 const NOW = Date.UTC(2026, 11, 10, 12, 0, 0)
@@ -84,5 +84,17 @@ describe('time formatting', () => {
     expect(plain(fmtAgo(now - 26 * MIN, now))).toBe('há 26 min')
     expect(plain(fmtAgo(now - 90 * MIN, now))).toBe('há 1 h 30 min')
     expect(plain(fmtAgo(now - 6099 * MIN, now))).toBe('há 4 dias 5 h')
+  })
+})
+
+describe('duration formatting', () => {
+  const plain = (s: string) => s.replace(/\u00a0/g, ' ')
+  it('shows seconds under a minute and minutes from 60 s', () => {
+    expect(plain(fmtSeg(45))).toBe('45 s')
+    expect(plain(fmtSeg(59.6))).toBe('1 min')
+    expect(plain(fmtSeg(60))).toBe('1 min')
+    expect(plain(fmtSeg(65))).toBe('1 min 05 s')
+    expect(plain(fmtSeg(150))).toBe('2 min 30 s')
+    expect(fmtSeg(null)).toBe('—')
   })
 })

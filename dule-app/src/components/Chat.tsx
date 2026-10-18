@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
 import { db } from '../db'
 import { fetchAudio } from '../sync'
-import { describe, durSec, fmtClock } from '../logic'
+import { describe, durSec, fmtClock, fmtSeg } from '../logic'
 import { moodByValue, painColor } from '../content'
 import type { DuleEvent } from '../types'
 
@@ -73,7 +73,7 @@ function ContractionPill({ e, onEdit, onAskDelete }: { e: DuleEvent; onEdit: () 
         onEdit()
       }}
     >
-      ⏱ {fmtClock(e.inicio)} · contração de {durSec(e)} s
+      ⏱ {fmtClock(e.inicio)} · contração de {fmtSeg(durSec(e))}
     </button>
   )
 }
@@ -90,7 +90,7 @@ function DeleteContraction({ e, onClose }: { e: DuleEvent; onClose: () => void }
       <div className="pop" role="dialog" aria-modal="true" aria-label="Excluir medição" onClick={(ev) => ev.stopPropagation()}>
         <h2 className="pop-title">Excluir esta medição?</h2>
         <p className="pop-text">
-          Contração das {fmtClock(e.inicio)}, de {durSec(e)} s.
+          Contração das {fmtClock(e.inicio)}, de {fmtSeg(durSec(e))}.
         </p>
         <div className="pop-actions">
           <button onClick={onClose}>Cancelar</button>
