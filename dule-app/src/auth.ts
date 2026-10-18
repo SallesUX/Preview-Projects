@@ -12,7 +12,7 @@ import type { Usuario } from './types'
 
 export type Sessao =
   | { tipo: 'usuario'; id: string; nome: string; nuvem: boolean }
-  | { tipo: 'admin'; id: string | null; nuvem: boolean }
+  | { tipo: 'admin'; id: string | null; nuvem: boolean; nome?: string }
 
 const SESSION_KEY = 'dule.sessao'
 
@@ -101,11 +101,29 @@ async function cadastrarNuvem(nome: string, senha: string): Promise<Nuvem> {
 }
 
 /** Keep (or create) the local copy of a cloud account, so the same login works offline. */
-async function guardarLocal(id: string, nome: string, senha: string) {
+async function guardarLocal(id: string, nome: string, senha: string, admin?: boolean) {
   const users = await db.users()
   const cur = users.find((u) => u.id === id)
   const sal = uid()
-  await db.putUser({ id, nome: nome.trim(), chave: chave(nome), sal, senhaHash: await sha256(`${sal}:${senha}`), criadoEm: cur?.criadoEm ?? Date.now() })
+  await db.putUser({
+    id,
+    nome: nome.trim(),
+    chave: chave(nome),
+    sal,
+    senhaHash: await sha256(`${sal}:${senha}`),
+    criadoEm: cur?.criadoEm ?? Date.now(),
+    admin: admin ?? cur?.admin,
+  })
+}
+
+/** Does this cloud account have admin rights (profiles.is_admin)? Unknown counts as no. */
+async function ehAdminNaNuvem(id: string): Promise<boolean> {
+  try {
+    const { data } = await supabase.from('profiles').select('id,is_admin').eq('id', id)
+    return !!data?.find((r) => r.id === id)?.is_admin
+  } catch {
+    return false
+  }
 }
 
 /**
@@ -179,9 +197,11 @@ export async function entrar(nome: string, senha: string): Promise<Sessao> {
     // same name may still have an older phone-only account here: bring it along
     const local = await locaisCom(nome, senha)
     if (local && local.id !== r.id) await moverParaNuvem(local.id, r.id)
-    await guardarLocal(r.id, nome, senha)
+    const admin = await ehAdminNaNuvem(r.id)
+    await guardarLocal(r.id, nome, senha, admin)
     const u = (await db.users()).find((x) => x.id === r.id)!
-    const s: Sessao = { tipo: 'usuario', id: r.id, nome: u.nome, nuvem: true }
+    // accounts given admin rights in the database (e.g. Amanda) open the admin area
+    const s: Sessao = admin ? { tipo: 'admin', id: r.id, nuvem: true, nome: u.nome } : { tipo: 'usuario', id: r.id, nome: u.nome, nuvem: true }
     salvarSessao(s)
     return s
   }
@@ -203,7 +223,9 @@ export async function entrar(nome: string, senha: string): Promise<Sessao> {
   }
 
   // offline: open with the local copy; sync resumes once there is internet
-  const s: Sessao = { tipo: 'usuario', id: local.id, nome: local.nome, nuvem: false }
+  const s: Sessao = local.admin
+    ? { tipo: 'admin', id: local.id, nuvem: false, nome: local.nome }
+    : { tipo: 'usuario', id: local.id, nome: local.nome, nuvem: false }
   salvarSessao(s)
   return s
 }

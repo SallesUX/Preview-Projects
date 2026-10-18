@@ -21,7 +21,7 @@ const BARRAS = 10
 const fmtData = (t: number) =>
   new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 
-export function Admin({ onLogout, nuvem }: { onLogout: () => void; nuvem: boolean }) {
+export function Admin({ onLogout, nuvem, nome }: { onLogout: () => void; nuvem: boolean; nome?: string }) {
   const [users, setUsers] = useState<Usuario[]>([])
   const [partos, setPartos] = useState<Parto[]>([])
   const [events, setEvents] = useState<DuleEvent[]>([])
@@ -35,9 +35,11 @@ export function Admin({ onLogout, nuvem }: { onLogout: () => void; nuvem: boolea
 
   const carregar = useCallback(async () => {
     const [u, p, e] = await Promise.all([db.users(), db.partos(), db.allEvents()])
-    setUsers(u.filter((x) => x.chave !== 'admindule').sort((a, b) => a.nome.localeCompare(b.nome)))
+    setUsers(u.filter((x) => !x.admin && x.chave !== 'admindule').sort((a, b) => a.nome.localeCompare(b.nome)))
     setLiberado(adminLiberado())
-    setPartos(p)
+    // admins' own test data stays out of the dashboard
+    const admins = new Set(u.filter((x) => x.admin || x.chave === 'admindule').map((x) => x.id))
+    setPartos(p.filter((x) => !x.userId || !admins.has(x.userId)))
     setEvents(e)
     setNow(Date.now())
     setAtualizado(Date.now())
@@ -185,7 +187,8 @@ export function Admin({ onLogout, nuvem }: { onLogout: () => void; nuvem: boolea
         </button>
       </div>
       <p className="admin-live">
-        <span className="live-dot" aria-hidden /> {nuvem ? 'Ao vivo · nuvem' : 'Só este celular'}
+        <span className="live-dot" aria-hidden /> {nome ? `${nome} · ` : ''}
+        {nuvem ? 'Ao vivo · nuvem' : 'Só este celular'}
         {atualizado ? ` · atualizado às ${fmtClock(atualizado)}` : ''}
       </p>
       {!nuvem && (

@@ -48,7 +48,7 @@ function Root() {
     setSessao(null)
   }
   if (!sessao) return <Login onLogin={login} />
-  if (sessao.tipo === 'admin') return <Admin onLogout={logout} nuvem={sessao.nuvem} />
+  if (sessao.tipo === 'admin') return <Admin onLogout={logout} nuvem={sessao.nuvem} nome={sessao.nome} />
   return (
     // key: remount the store when another account logs in
     <StoreProvider key={sessao.id} usuario={sessao} onLogout={logout}>

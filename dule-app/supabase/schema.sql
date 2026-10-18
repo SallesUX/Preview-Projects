@@ -118,3 +118,6 @@ end $$;
 
 -- ---------- STEP 2 (run separately, after logging in once as AdminDule in the app) ----------
 -- update public.profiles set is_admin = true where nome_chave = 'admindule';
+
+-- ---------- more admins (e.g. Amanda): she creates a normal account in the app first, then ----------
+-- update public.profiles set is_admin = true where nome_chave = 'amanda';

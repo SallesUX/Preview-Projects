@@ -174,7 +174,7 @@ export async function pull() {
     const users = await db.users()
     for (const p of profiles) {
       const cur = users.find((u) => u.id === p.id)
-      const next = { senhaHash: '', sal: '', ...cur, id: p.id, nome: p.nome, chave: p.nome_chave, criadoEm: cur?.criadoEm ?? Date.parse(p.criado_em) }
+      const next = { senhaHash: '', sal: '', ...cur, id: p.id, nome: p.nome, chave: p.nome_chave, admin: p.is_admin, criadoEm: cur?.criadoEm ?? Date.parse(p.criado_em) }
       if (!same(cur, next)) await db.putUser(next)
     }
 

@@ -52,6 +52,8 @@ export interface Usuario {
   senhaHash: string
   sal: string
   criadoEm: number
+  /** admin rights (profiles.is_admin in the cloud); admins see the admin area instead of the app */
+  admin?: boolean
 }
 
 export type PhaseId = 'prodromos' | 'latente' | 'ativa' | 'transicao' | 'expulsivo' | 'nascimento'
