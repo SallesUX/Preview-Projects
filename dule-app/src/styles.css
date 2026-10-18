@@ -346,7 +346,7 @@ textarea.field { resize: vertical; }
 .admin-fase { background: var(--grad-soft); color: var(--accent); border-radius: 999px; padding: 4px 10px; font-size: 12px; font-weight: 600; white-space: nowrap; }
 .admin-stats { display: grid; grid-template-columns: repeat(4, 1fr); gap: 6px; }
 .admin-stats div { background: var(--surface-2); border-radius: 14px; padding: 8px 4px; text-align: center; min-width: 0; }
-.admin-stats b { display: block; font-size: 14px; font-variant-numeric: tabular-nums; }
+.admin-stats b { display: block; text-wrap: balance; font-size: 14px; font-variant-numeric: tabular-nums; }
 .admin-stats small { color: var(--muted); font-size: 10px; }
 .admin-bars { margin: 4px 0 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; align-items: end; }
 .admin-bar { display: flex; flex-direction: column; align-items: center; gap: 2px; height: 70px; justify-content: flex-end; }

@@ -101,25 +101,34 @@ export const fmtMMSS = (sec: number) => {
   return `${Math.floor(s / 60)}:${String(s % 60).padStart(2, '0')}`
 }
 
+/**
+ * Whole minutes as "45 min", "2 h 05 min" (from 60 min) or "4 dias 5 h" (from 24 h).
+ * A number and its unit are joined by a no-break space so a narrow card never leaves "h" alone.
+ */
+export const fmtSpan = (totalMin: number) => {
+  const m = Math.max(0, Math.round(totalMin))
+  const nb = '\u00a0'
+  if (m < 60) return `${m}${nb}min`
+  const d = Math.floor(m / 1440)
+  const h = Math.floor((m % 1440) / 60)
+  if (d === 0) return m % 60 ? `${h}${nb}h ${String(m % 60).padStart(2, '0')}${nb}min` : `${h}${nb}h`
+  const dias = `${d}${nb}${d === 1 ? 'dia' : 'dias'}`
+  return h ? `${dias} ${h}${nb}h` : dias
+}
+
 export const fmtMin = (min: number | null) => {
   if (min == null) return '—'
   if (min < 1) return `${Math.round(min * 60)} s`
+  if (min >= 60) return fmtSpan(min)
   return `${min.toFixed(min < 10 ? 1 : 0).replace('.', ',')} min`
 }
 
 export const fmtAgo = (t: number, now: number) => {
   const m = Math.round((now - t) / MIN)
-  if (m < 1) return 'agora'
-  if (m < 60) return `há ${m} min`
-  const h = Math.floor(m / 60)
-  return `há ${h}h${String(m % 60).padStart(2, '0')}`
+  return m < 1 ? 'agora' : `há ${fmtSpan(m)}`
 }
 
-export const fmtDuration = (ms: number) => {
-  const m = Math.round(ms / MIN)
-  const h = Math.floor(m / 60)
-  return h ? `${h}h${String(m % 60).padStart(2, '0')}` : `${m} min`
-}
+export const fmtDuration = (ms: number) => fmtSpan(ms / MIN)
 
 /** One-line human description of any event (chat bubbles + report). */
 export function describe(e: DuleEvent): string {

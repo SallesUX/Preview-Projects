@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { alertTriggered, buildReport, statsFor, suggestPhase, trend } from './logic'
+import { alertTriggered, buildReport, statsFor, suggestPhase, trend, fmtMin, fmtAgo, fmtSpan } from './logic'
 import type { DuleEvent } from './types'
 
 const NOW = Date.UTC(2026, 11, 10, 12, 0, 0)
@@ -58,7 +58,31 @@ describe('report', () => {
     const r = buildReport(evs, NOW, 60, 'latente')
     expect(r.dor.max).toBe(7)
     expect(r.humor.ultimo?.valor).toBe(4)
-    expect(r.ultimos.find((u) => u.rotulo === 'Xixi')?.quando).toContain('há 40 min')
+    expect(r.ultimos.find((u) => u.rotulo === 'Xixi')?.quando.replace(/\u00a0/g, ' ')).toContain('há 40 min')
     expect(r.resumo).toContain('Fase: latente')
+  })
+})
+
+describe('time formatting', () => {
+  // no-break spaces are only for layout; compare with plain spaces
+  const plain = (s: string) => s.replace(/\u00a0/g, ' ')
+  it('keeps minutes under an hour', () => {
+    expect(plain(fmtMin(0.5))).toBe('30 s')
+    expect(plain(fmtMin(5))).toBe('5,0 min')
+    expect(plain(fmtMin(45))).toBe('45 min')
+  })
+  it('switches to hours from 60 min and to days from 24 h', () => {
+    expect(plain(fmtMin(60))).toBe('1 h')
+    expect(plain(fmtMin(125))).toBe('2 h 05 min')
+    expect(plain(fmtMin(1440))).toBe('1 dia')
+    expect(plain(fmtMin(6099))).toBe('4 dias 5 h')
+    expect(plain(fmtSpan(2 * 1440 + 30))).toBe('2 dias')
+  })
+  it('formats "há …" the same way', () => {
+    const now = 10_000_000_000
+    expect(plain(fmtAgo(now - 20_000, now))).toBe('agora')
+    expect(plain(fmtAgo(now - 26 * MIN, now))).toBe('há 26 min')
+    expect(plain(fmtAgo(now - 90 * MIN, now))).toBe('há 1 h 30 min')
+    expect(plain(fmtAgo(now - 6099 * MIN, now))).toBe('há 4 dias 5 h')
   })
 })
