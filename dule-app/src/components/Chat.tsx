@@ -53,7 +53,8 @@ function useLongPress(onLong: () => void, ms = 500) {
 }
 
 function ContractionPill({ e, onEdit, onAskDelete }: { e: DuleEvent; onEdit: () => void; onAskDelete: () => void }) {
-  const { fired, handlers } = useLongPress(onAskDelete)
+  const { readOnly } = useStore()
+  const { fired, handlers } = useLongPress(() => !readOnly && onAskDelete())
   return (
     <button
       className="pill"

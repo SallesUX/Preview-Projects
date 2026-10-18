@@ -30,13 +30,34 @@ function open(): Promise<IDBDatabase> {
   return dbPromise
 }
 
+// Every write is announced to other tabs (and to the admin live view) on this channel.
+const channel = typeof BroadcastChannel !== 'undefined' ? new BroadcastChannel('dule') : null
+const localListeners = new Set<() => void>()
+const announce = () => {
+  channel?.postMessage('change')
+  localListeners.forEach((fn) => fn())
+}
+/** Subscribe to data changes made in this or any other tab. Returns an unsubscribe function. */
+export function onDbChange(fn: () => void): () => void {
+  const onMsg = () => fn()
+  channel?.addEventListener('message', onMsg)
+  localListeners.add(fn)
+  return () => {
+    channel?.removeEventListener('message', onMsg)
+    localListeners.delete(fn)
+  }
+}
+
 function tx<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectStore) => IDBRequest<T> | void): Promise<T> {
   return open().then(
     (db) =>
       new Promise<T>((resolve, reject) => {
         const t = db.transaction(store, mode)
         const req = fn(t.objectStore(store))
-        t.oncomplete = () => resolve(req ? (req.result as T) : (undefined as T))
+        t.oncomplete = () => {
+          if (mode === 'readwrite') announce()
+          resolve(req ? (req.result as T) : (undefined as T))
+        }
         t.onerror = () => reject(t.error)
         t.onabort = () => reject(t.error)
       }),

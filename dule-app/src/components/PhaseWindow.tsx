@@ -5,7 +5,7 @@ import type { PhaseId } from '../types'
 import { MIN, currentPhase, lastOf } from '../logic'
 
 export function PhaseWindow({ onPick }: { onPick: () => void }) {
-  const { events, now, parto } = useStore()
+  const { events, now, parto, readOnly } = useStore()
   const phaseId = useMemo(() => currentPhase(events, now, parto.faseManual), [events, now, parto.faseManual])
   const idx = phaseId ? PHASES.findIndex((p) => p.id === phaseId) : -1
   const phase = phaseId ? phaseById(phaseId) : null
@@ -30,7 +30,7 @@ export function PhaseWindow({ onPick }: { onPick: () => void }) {
     <section className="phase">
       <div className="phase-top">
         <button className="phase-head" onClick={onPick}>
-          <small>FASE ATUAL {parto.faseManual ? '(escolhida)' : '(sugerida)'} · toque para mudar</small>
+          <small>FASE ATUAL {parto.faseManual ? '(escolhida)' : '(sugerida)'}{readOnly ? '' : ' · toque para mudar'}</small>
           <strong>{phase ? phase.nome : 'Aguardando contrações'}</strong>
         </button>
         <button className="help-btn" onClick={() => setGuideOpen(true)} aria-label="Sobre as fases do trabalho de parto">

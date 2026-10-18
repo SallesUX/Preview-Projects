@@ -1,5 +1,7 @@
-import { useEffect, useMemo, useState } from 'react'
-import { db } from '../db'
+import { useCallback, useEffect, useMemo, useState } from 'react'
+import { db, onDbChange } from '../db'
+import { StoreProvider } from '../store'
+import App from '../App'
 import { phaseById } from '../content'
 import { MIN, contractions, currentPhase, durSec, fmtAgo, fmtClock, fmtMin, inWindow, statsFor } from '../logic'
 import type { DuleEvent, Parto, Usuario } from '../types'
@@ -19,20 +21,32 @@ export function Admin({ onLogout }: { onLogout: () => void }) {
   const [users, setUsers] = useState<Usuario[]>([])
   const [partos, setPartos] = useState<Parto[]>([])
   const [events, setEvents] = useState<DuleEvent[]>([])
-  const [aba, setAba] = useState<'dashboard' | 'historico'>('dashboard')
+  const [aba, setAba] = useState<'dashboard' | 'historico' | 'tela'>('dashboard')
+  const [vendo, setVendo] = useState<Usuario | null>(null)
+  const [atualizado, setAtualizado] = useState<number | null>(null)
   const [filtro, setFiltro] = useState('todos')
   const [msg, setMsg] = useState<string | null>(null)
   const [now, setNow] = useState(Date.now())
 
-  useEffect(() => {
-    Promise.all([db.users(), db.partos(), db.allEvents()]).then(([u, p, e]) => {
-      setUsers(u.sort((a, b) => a.nome.localeCompare(b.nome)))
-      setPartos(p)
-      setEvents(e)
-    })
-    const t = setInterval(() => setNow(Date.now()), 30_000)
-    return () => clearInterval(t)
+  const carregar = useCallback(async () => {
+    const [u, p, e] = await Promise.all([db.users(), db.partos(), db.allEvents()])
+    setUsers(u.sort((a, b) => a.nome.localeCompare(b.nome)))
+    setPartos(p)
+    setEvents(e)
+    setNow(Date.now())
+    setAtualizado(Date.now())
   }, [])
+
+  // live: reload on every write from any tab, plus a 5 s fallback
+  useEffect(() => {
+    carregar()
+    const off = onDbChange(carregar)
+    const t = setInterval(carregar, 5000)
+    return () => {
+      off()
+      clearInterval(t)
+    }
+  }, [carregar])
 
   const nomeDe = (userId?: string) => users.find((u) => u.id === userId)?.nome ?? 'Sem dono'
   const partosVisiveis = partos.filter((p) => filtro === 'todos' || p.userId === filtro)
@@ -122,6 +136,23 @@ export function Admin({ onLogout }: { onLogout: () => void }) {
     setTimeout(() => URL.revokeObjectURL(a.href), 5000)
   }
 
+  if (vendo)
+    return (
+      <div className="viewer">
+        <div className="viewer-bar">
+          <span>
+            <span className="live-dot" aria-hidden /> Vendo a tela de <b>{vendo.nome}</b> · ao vivo
+          </span>
+          <button onClick={() => setVendo(null)}>Voltar</button>
+        </div>
+        <div className="viewer-body">
+          <StoreProvider key={vendo.id} usuario={vendo} onLogout={() => setVendo(null)} readOnly>
+            <App />
+          </StoreProvider>
+        </div>
+      </div>
+    )
+
   return (
     <div className="screen admin">
       <header className="screen-head">
@@ -139,21 +170,57 @@ export function Admin({ onLogout }: { onLogout: () => void }) {
         <button role="tab" aria-selected={aba === 'historico'} className={aba === 'historico' ? 'sel' : ''} onClick={() => setAba('historico')}>
           Histórico
         </button>
+        <button role="tab" aria-selected={aba === 'tela'} className={aba === 'tela' ? 'sel' : ''} onClick={() => setAba('tela')}>
+          Tela do usuário
+        </button>
       </div>
+      <p className="admin-live">
+        <span className="live-dot" aria-hidden /> Ao vivo{atualizado ? ` · atualizado às ${fmtClock(atualizado)}` : ''}
+      </p>
 
-      <label className="admin-filter">
-        <span>Usuário</span>
-        <select id="admin-filtro" className="field" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
-          <option value="todos">Todos</option>
-          {users.map((u) => (
-            <option key={u.id} value={u.id}>
-              {u.nome}
-            </option>
-          ))}
-        </select>
-      </label>
+      {aba !== 'tela' && (
+        <label className="admin-filter">
+          <span>Usuário</span>
+          <select id="admin-filtro" className="field" value={filtro} onChange={(e) => setFiltro(e.target.value)}>
+            <option value="todos">Todos</option>
+            {users.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.nome}
+              </option>
+            ))}
+          </select>
+        </label>
+      )}
 
-      {aba === 'dashboard' ? (
+      {aba === 'tela' ? (
+        <div className="admin-users">
+          <p className="hint pad">Escolha um usuário para ver a tela dele, do jeito que ele vê, atualizada ao vivo.</p>
+          {users.length === 0 && <p className="hint pad">Nenhum usuário cadastrado neste celular.</p>}
+          {users.map((u) => {
+            const ps = partos.filter((p) => p.userId === u.id)
+            const n = events.filter((e) => e.tipo === 'contracao' && ps.some((p) => p.id === e.partoId)).length
+            const rodando = (() => {
+              try {
+                return localStorage.getItem(`dule.running:${u.id}`) != null
+              } catch {
+                return false
+              }
+            })()
+            return (
+              <button key={u.id} className="option admin-user" onClick={() => setVendo(u)}>
+                <span>
+                  <b>{u.nome}</b>
+                  <small>
+                    {' '}
+                    · {n} {n === 1 ? 'contração' : 'contrações'}
+                  </small>
+                </span>
+                {rodando && <span className="admin-fase">contração agora</span>}
+              </button>
+            )
+          })}
+        </div>
+      ) : aba === 'dashboard' ? (
         <>
           <div className="admin-kpis">
             <div className="kpi">
@@ -187,6 +254,11 @@ export function Admin({ onLogout }: { onLogout: () => void }) {
                   </div>
                   <span className="admin-fase">{fase ? phaseById(fase).curto : 'Sem contrações'}</span>
                 </div>
+                {users.find((u) => u.id === p.userId) && (
+                  <button className="admin-ver" onClick={() => setVendo(users.find((u) => u.id === p.userId)!)}>
+                    Ver tela de {nomeDe(p.userId)} →
+                  </button>
+                )}
                 <div className="admin-stats">
                   <div>
                     <b>{cs.length}</b>
@@ -252,12 +324,14 @@ export function Admin({ onLogout }: { onLogout: () => void }) {
         </div>
       )}
 
-      <div className="report-actions">
-        <button className="primary" onClick={compartilhar}>
-          Compartilhar
-        </button>
-        <button onClick={exportarCsv}>Exportar CSV</button>
-      </div>
+      {aba !== 'tela' && (
+        <div className="report-actions">
+          <button className="primary" onClick={compartilhar}>
+            Compartilhar
+          </button>
+          <button onClick={exportarCsv}>Exportar CSV</button>
+        </div>
+      )}
       {msg && <p className="hint pad">{msg}</p>}
     </div>
   )

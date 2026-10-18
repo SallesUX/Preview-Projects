@@ -3,7 +3,7 @@ import { useStore } from '../store'
 import { contractions, durSec, fmtMMSS, fmtMin, inWindow, statsFor } from '../logic'
 
 export function Timer({ onStopped }: { onStopped: () => void }) {
-  const { running, now, events, startContraction, stopContraction, cancelContraction } = useStore()
+  const { running, now, events, startContraction, stopContraction, cancelContraction, readOnly } = useStore()
   const cs = useMemo(() => contractions(events), [events])
   const last = cs.at(-1)
   const prev = cs.at(-2)
@@ -19,7 +19,7 @@ export function Timer({ onStopped }: { onStopped: () => void }) {
 
   return (
     <section className="timer">
-      <button className={`timer-btn ${running ? 'running' : ''}`} onClick={toggle}>
+      <button className={`timer-btn ${running ? 'running' : ''}`} onClick={toggle} disabled={readOnly}>
         {running ? (
           <>
             <span className="timer-label">Terminou</span>
@@ -29,12 +29,16 @@ export function Timer({ onStopped }: { onStopped: () => void }) {
           <>
             <span className="timer-label">Começou</span>
             <span className="timer-sub">
-              {sinceLast != null ? `última há ${fmtMin(sinceLast)}` : 'toque quando a contração começar'}
+              {sinceLast != null
+                ? `última há ${fmtMin(sinceLast)}`
+                : readOnly
+                  ? 'nenhuma contração ainda'
+                  : 'toque quando a contração começar'}
             </span>
           </>
         )}
       </button>
-      {running && (
+      {running && !readOnly && (
         <button className="link-btn" onClick={cancelContraction}>
           Toquei sem querer — cancelar
         </button>

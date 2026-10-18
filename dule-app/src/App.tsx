@@ -15,8 +15,10 @@ import type { DuleEvent, ShortcutDef } from './types'
 type Screen = 'main' | 'report' | 'list' | 'settings'
 
 export default function App() {
+  const { readOnly } = useStore()
   const [screen, setScreen] = useState<Screen>('main')
-  const [editing, setEditing] = useState<DuleEvent | null>(null)
+  const [editing, setEditingState] = useState<DuleEvent | null>(null)
+  const setEditing = (e: DuleEvent | null) => !readOnly && setEditingState(e)
 
   return (
     <>
@@ -30,7 +32,7 @@ export default function App() {
 }
 
 function Main({ go, onEdit }: { go: (s: Screen) => void; onEdit: (e: DuleEvent) => void }) {
-  const { events, now, parto, settings, addEvent, removeEvent } = useStore()
+  const { events, now, parto, settings, addEvent, removeEvent, readOnly } = useStore()
   const [painOpen, setPainOpen] = useState(false)
   const [moodOpen, setMoodOpen] = useState(false)
   const [chainMood, setChainMood] = useState(false)
@@ -109,7 +111,7 @@ function Main({ go, onEdit }: { go: (s: Screen) => void; onEdit: (e: DuleEvent) 
   return (
     <div className="main">
       <header className="top">
-        <button className="top-phase" onClick={() => setPhaseOpen(true)}>
+        <button className="top-phase" onClick={() => !readOnly && setPhaseOpen(true)}>
           <small>{parto.nome}</small>
           <b>{phase ? phaseById(phase).curto : 'Dule.app'}</b>
         </button>
@@ -117,9 +119,11 @@ function Main({ go, onEdit }: { go: (s: Screen) => void; onEdit: (e: DuleEvent) 
           <button className="icon-btn" onClick={() => go('list')} aria-label="Lista de contrações">
             ☰
           </button>
-          <button className="icon-btn" onClick={() => go('settings')} aria-label="Configurações">
-            ⚙
-          </button>
+          {!readOnly && (
+            <button className="icon-btn" onClick={() => go('settings')} aria-label="Configurações">
+              ⚙
+            </button>
+          )}
           <button className="report-btn" onClick={() => go('report')}>
             Relatório
           </button>
@@ -152,32 +156,34 @@ function Main({ go, onEdit }: { go: (s: Screen) => void; onEdit: (e: DuleEvent) 
           </div>
         )}
 
-        {(dorDue || humorDue) && (
+        {!readOnly && (dorDue || humorDue) && (
           <button className="banner reminder" onClick={checkIn}>
             <b>Hora de perguntar {dorDue && humorDue ? 'a dor e o humor' : dorDue ? 'a dor' : 'o humor'}</b>
             <span>Toque para registrar (no intervalo entre contrações).</span>
           </button>
         )}
 
-        <PhaseWindow onPick={() => setPhaseOpen(true)} />
+        <PhaseWindow onPick={() => !readOnly && setPhaseOpen(true)} />
         <Chat onEdit={onEdit} />
       </div>
 
-      <footer className="bottom">
-        <div className="shortcuts">
-          {settings.atalhos.map((s) => (
-            <button
-              key={s.id}
-              className={`chip ${s.kind === 'dor' && highlightPain ? 'pulse' : ''} ${s.kind === 'bolsa' ? 'chip-warn' : ''}`}
-              onClick={() => onShortcut(s)}
-            >
-              {s.kind === 'humor' ? '🙂 ' : ''}
-              {s.rotulo}
-            </button>
-          ))}
-        </div>
-        <Composer />
-      </footer>
+      {!readOnly && (
+        <footer className="bottom">
+          <div className="shortcuts">
+            {settings.atalhos.map((s) => (
+              <button
+                key={s.id}
+                className={`chip ${s.kind === 'dor' && highlightPain ? 'pulse' : ''} ${s.kind === 'bolsa' ? 'chip-warn' : ''}`}
+                onClick={() => onShortcut(s)}
+              >
+                {s.kind === 'humor' ? '🙂 ' : ''}
+                {s.rotulo}
+              </button>
+            ))}
+          </div>
+          <Composer />
+        </footer>
+      )}
 
       {toast && (
         <div className="toast">
