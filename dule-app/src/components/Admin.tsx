@@ -15,6 +15,9 @@ interface Linha {
   intervalo: number | null
 }
 
+/** half-hour bars in the dashboard chart (10 × 30 min = last 5 hours) */
+const BARRAS = 10
+
 const fmtData = (t: number) =>
   new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 
@@ -61,10 +64,14 @@ export function Admin({ onLogout, nuvem }: { onLogout: () => void; nuvem: boolea
         const cs = contractions(evs)
         const hora = statsFor(inWindow(cs, now, 60))
         const fase = currentPhase(evs, now, p.faseManual)
-        // contractions per hour over the last 6 hours, oldest first
-        const barras = Array.from({ length: 6 }, (_, i) => {
-          const fim = now - (5 - i) * 60 * MIN
-          return cs.filter((c) => c.inicio > fim - 60 * MIN && c.inicio <= fim).length
+        // contractions per half hour (aligned to :00/:30, the last bar is the current half hour)
+        // over the last 5 hours, oldest first
+        const meiaHora = 30 * MIN
+        const ultimoFim = Math.ceil(now / meiaHora) * meiaHora
+        const barras = Array.from({ length: BARRAS }, (_, i) => {
+          const fim = ultimoFim - (BARRAS - 1 - i) * meiaHora
+          const inicio = fim - 30 * MIN
+          return { inicio, n: cs.filter((c) => c.inicio >= inicio && c.inicio < fim).length }
         })
         return { p, cs, hora, fase, barras }
       }),
@@ -256,7 +263,7 @@ export function Admin({ onLogout, nuvem }: { onLogout: () => void; nuvem: boolea
 
           {porParto.length === 0 && <p className="hint pad">Nenhum parto registrado ainda.</p>}
           {porParto.map(({ p, cs, hora, fase, barras }) => {
-            const max = Math.max(1, ...barras)
+            const max = Math.max(1, ...barras.map((b) => b.n))
             const ultima = cs.at(-1)
             return (
               <section key={p.id} className="card admin-parto">
@@ -290,14 +297,17 @@ export function Admin({ onLogout, nuvem }: { onLogout: () => void; nuvem: boolea
                     <small>última</small>
                   </div>
                 </div>
-                <figure className="admin-bars" aria-label="Contrações por hora nas últimas 6 horas">
-                  {barras.map((n, i) => (
-                    <div key={i} className="admin-bar">
-                      <span style={{ height: `${(n / max) * 100}%` }} />
-                      <small>{n}</small>
+                <figure className="admin-bars" aria-label="Contrações a cada meia hora nas últimas 5 horas">
+                  {barras.map(({ inicio, n }, i) => (
+                    <div key={i} className="admin-bar" title={`${fmtClock(inicio)}–${fmtClock(inicio + 30 * MIN)}: ${n}`}>
+                      <small className="admin-bar-n">{n || ''}</small>
+                      <div className="admin-bar-track">
+                        <span style={{ height: `${(n / max) * 100}%` }} />
+                      </div>
+                      <small className="admin-bar-t">{i % 2 === 0 ? fmtClock(inicio) : ''}</small>
                     </div>
                   ))}
-                  <figcaption>Contrações por hora · últimas 6 h</figcaption>
+                  <figcaption>Contrações a cada 30 min · últimas 5 h</figcaption>
                 </figure>
               </section>
             )

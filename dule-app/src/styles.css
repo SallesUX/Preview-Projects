@@ -350,10 +350,13 @@ textarea.field { resize: vertical; }
 .admin-stats div { background: var(--surface-2); border-radius: 14px; padding: 8px 4px; text-align: center; min-width: 0; }
 .admin-stats b { display: block; text-wrap: balance; font-size: 14px; font-variant-numeric: tabular-nums; }
 .admin-stats small { color: var(--muted); font-size: 10px; }
-.admin-bars { margin: 4px 0 0; display: grid; grid-template-columns: repeat(6, 1fr); gap: 6px; align-items: end; }
-.admin-bar { display: flex; flex-direction: column; align-items: center; gap: 2px; height: 70px; justify-content: flex-end; }
-.admin-bar span { width: 100%; min-height: 3px; background: var(--grad); border-radius: 6px 6px 3px 3px; }
-.admin-bar small { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; }
+.admin-bars { margin: 4px 0 0; display: grid; grid-template-columns: repeat(10, 1fr); gap: 4px; align-items: end; }
+.admin-bar { display: flex; flex-direction: column; align-items: center; gap: 2px; min-width: 0; }
+.admin-bar-track { width: 100%; height: 60px; display: flex; align-items: flex-end; }
+.admin-bar-track span { width: 100%; min-height: 3px; background: var(--grad); border-radius: 5px 5px 2px 2px; }
+.admin-bar small { font-size: 10px; color: var(--muted); font-variant-numeric: tabular-nums; line-height: 1.2; min-height: 12px; }
+.admin-bar .admin-bar-n { color: var(--text); font-weight: 600; }
+.admin-bar .admin-bar-t { white-space: nowrap; overflow: visible; }
 .admin-bars figcaption { grid-column: 1 / -1; font-size: 11px; color: var(--muted); }
 .admin-table-wrap { overflow-x: auto; margin: 0 12px; background: var(--surface); border-radius: var(--radius); box-shadow: var(--shadow); }
 .admin-table { width: 100%; margin: 0; font-size: 13px; }
