@@ -321,6 +321,8 @@ textarea.field { resize: vertical; }
 .admin-live { margin: -4px 16px 0; font-size: 12px; color: var(--muted); display: flex; align-items: center; gap: 6px; }
 .live-dot { display: inline-block; width: 8px; height: 8px; border-radius: 50%; background: var(--ok); box-shadow: 0 0 0 3px rgba(63, 157, 87, 0.2); animation: pulse-live 2s ease-in-out infinite; }
 @keyframes pulse-live { 50% { opacity: 0.4; } }
+.admin-aviso { margin: 0 12px; padding: 10px 14px; border-radius: 14px; background: var(--running-bg); font-size: 13px; }
+.sync-status { margin: 0; font-size: 13px; color: var(--muted); }
 .admin-users { display: flex; flex-direction: column; gap: 8px; margin: 0 12px; }
 .admin-users .hint { margin: 0 4px 4px; padding: 0; }
 .admin-user { display: flex; justify-content: space-between; align-items: center; gap: 8px; background: var(--surface); box-shadow: var(--shadow); }

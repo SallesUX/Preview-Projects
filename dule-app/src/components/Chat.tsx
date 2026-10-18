@@ -1,25 +1,34 @@
 import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
 import { db } from '../db'
+import { fetchAudio } from '../sync'
 import { describe, durSec, fmtClock } from '../logic'
 import { moodByValue, painColor } from '../content'
 import type { DuleEvent } from '../types'
 
 export function AudioPlayer({ audioId }: { audioId: string }) {
+  const { usuario } = useStore()
   const [url, setUrl] = useState<string | null>(null)
+  const [faltando, setFaltando] = useState(false)
   useEffect(() => {
     let u: string | null = null
-    db.getAudio(audioId).then((b) => {
+    let vivo = true
+    ;(async () => {
+      // recorded on another device: download it from the cloud once
+      const b = (await db.getAudio(audioId)) ?? (await fetchAudio(usuario.id, audioId))
+      if (!vivo) return
       if (b) {
         u = URL.createObjectURL(b)
         setUrl(u)
-      }
-    })
+      } else setFaltando(true)
+    })()
     return () => {
+      vivo = false
       if (u) URL.revokeObjectURL(u)
     }
-  }, [audioId])
-  return url ? <audio controls src={url} preload="metadata" /> : <small>carregando áudio…</small>
+  }, [audioId, usuario.id])
+  if (url) return <audio controls src={url} preload="metadata" />
+  return <small>{faltando ? 'áudio ainda não disponível' : 'carregando áudio…'}</small>
 }
 
 const dayKey = (t: number) => new Date(t).toLocaleDateString('pt-BR', { weekday: 'long', day: '2-digit', month: '2-digit' })

@@ -1,6 +1,7 @@
-import { useRef, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { useStore } from '../store'
-import { exportBackup, importBackup, uid } from '../db'
+import { exportBackup, importBackup, onDbChange, uid } from '../db'
+import { pendentes } from '../sync'
 import type { Settings as S } from '../types'
 
 export function Settings({ onBack }: { onBack: () => void }) {
@@ -9,6 +10,12 @@ export function Settings({ onBack }: { onBack: () => void }) {
   const [atalho, setAtalho] = useState('')
   const [msg, setMsg] = useState<string | null>(null)
   const [confirmReset, setConfirmReset] = useState(false)
+  const [fila, setFila] = useState<number | null>(null)
+  useEffect(() => {
+    const ver = () => void pendentes(usuario.id).then(setFila)
+    ver()
+    return onDbChange(ver)
+  }, [usuario.id])
   const [resetMsg, setResetMsg] = useState<string | null>(null)
   const file = useRef<HTMLInputElement>(null)
 
@@ -59,6 +66,11 @@ export function Settings({ onBack }: { onBack: () => void }) {
           </span>
           <button onClick={logout}>Sair</button>
         </div>
+        <p className="sync-status">
+          {usuario.nuvem === false
+            ? '📱 Entrou sem internet: os dados estão só neste celular. Saia e entre de novo com internet para enviar à nuvem.'
+            : fila == null ? '' : fila === 0 ? '☁️ Tudo salvo na nuvem.' : `⏳ ${fila} ${fila === 1 ? 'alteração aguardando' : 'alterações aguardando'} internet para ir para a nuvem.`}
+        </p>
       </section>
 
       <section className="card">

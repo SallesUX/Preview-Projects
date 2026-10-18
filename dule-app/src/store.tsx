@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 import { db, onDbChange, requestPersistence, uid } from './db'
+import { enqueue, onRemoteChange, runKey } from './sync'
 import { DEFAULT_SHORTCUTS } from './content'
 import type { DuleEvent, Parto, PhaseId, Settings, Tema } from './types'
 
@@ -26,7 +27,7 @@ interface Store {
   resetParto: () => Promise<void>
   reload: () => Promise<void>
   /** logged-in account (or, in the admin view, the account being watched) */
-  usuario: { id: string; nome: string }
+  usuario: { id: string; nome: string; nuvem?: boolean }
   logout: () => void
   /** admin live view: shows the user's screen, nothing can be changed */
   readOnly: boolean
@@ -64,12 +65,12 @@ export function StoreProvider({
   readOnly = false,
   children,
 }: {
-  usuario: { id: string; nome: string }
+  usuario: { id: string; nome: string; nuvem?: boolean }
   onLogout: () => void
   readOnly?: boolean
   children: ReactNode
 }) {
-  const RUN_KEY = `dule.running:${usuario.id}`
+  const RUN_KEY = runKey(usuario.id)
   const [ready, setReady] = useState(false)
   const [settings, setSettingsState] = useState<Settings | null>(null)
   const [partos, setPartos] = useState<Parto[]>([])
@@ -116,14 +117,23 @@ export function StoreProvider({
       await db.putParto(p)
       ps = [p]
     }
+    const salvo = st
     if (!st) st = defaultSettings(ps[0].id)
     if (!ps.find((p) => p.id === st!.partoAtivoId)) st = { ...st, partoAtivoId: ps[0].id }
-    await db.putSettings(st, usuario.id)
+    if (st !== salvo) await db.putSettings(st, usuario.id)
+    const r = localStorage.getItem(RUN_KEY)
+    setRunning(r ? Number(r) : null)
     setPartos(ps.sort((a, b) => a.criadoEm - b.criadoEm))
     setSettingsState(st)
     setEvents(await db.eventsByParto(st.partoAtivoId))
     setReady(true)
   }, [usuario.id, readOnly, RUN_KEY])
+
+  // own screen: reload when data arrives from the cloud (another device, or the admin pulled)
+  useEffect(() => {
+    if (readOnly) return
+    return onRemoteChange(load)
+  }, [readOnly, load])
 
   // live view: reload whenever any tab writes, when the running contraction changes,
   // and every few seconds as a fallback
@@ -170,11 +180,13 @@ export function StoreProvider({
     const t = Date.now()
     localStorage.setItem(RUN_KEY, String(t))
     setRunning(t)
+    enqueue('estado', usuario.id)
     navigator.vibrate?.(30)
   }
   const cancelContraction = () => {
     localStorage.removeItem(RUN_KEY)
     setRunning(null)
+    enqueue('estado', usuario.id)
   }
   const stopContraction = async () => {
     if (!running) return null

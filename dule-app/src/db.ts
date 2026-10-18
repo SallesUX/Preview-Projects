@@ -1,11 +1,12 @@
 /**
- * Minimal IndexedDB wrapper. Everything stays on the device.
- * Stores: events (DuleEvent), partos (Parto), audio (Blob by id), kv (settings), users (Usuario).
+ * Minimal IndexedDB wrapper: the on-device copy of everything (works offline).
+ * Stores: events (DuleEvent), partos (Parto), audio (Blob by id), kv (settings), users (Usuario),
+ * outbox (changes waiting to be sent to the cloud, see sync.ts).
  */
 import type { DuleEvent, Parto, Settings, Usuario } from './types'
 
 const DB_NAME = 'dule'
-const DB_VERSION = 2
+const DB_VERSION = 3
 
 let dbPromise: Promise<IDBDatabase> | null = null
 
@@ -23,6 +24,7 @@ function open(): Promise<IDBDatabase> {
       if (!db.objectStoreNames.contains('audio')) db.createObjectStore('audio')
       if (!db.objectStoreNames.contains('kv')) db.createObjectStore('kv')
       if (!db.objectStoreNames.contains('users')) db.createObjectStore('users', { keyPath: 'id' })
+      if (!db.objectStoreNames.contains('outbox')) db.createObjectStore('outbox', { keyPath: 'k' })
     }
     req.onsuccess = () => resolve(req.result)
     req.onerror = () => reject(req.error)
@@ -37,6 +39,8 @@ const announce = () => {
   channel?.postMessage('change')
   localListeners.forEach((fn) => fn())
 }
+/** Tell open screens to re-read (used after cloud data or localStorage state changed). */
+export const notifyChange = announce
 /** Subscribe to data changes made in this or any other tab. Returns an unsubscribe function. */
 export function onDbChange(fn: () => void): () => void {
   const onMsg = () => fn()
@@ -64,34 +68,66 @@ function tx<T>(store: string, mode: IDBTransactionMode, fn: (s: IDBObjectStore) 
   )
 }
 
+export type SyncTable = 'partos' | 'events' | 'settings' | 'audio' | 'estado'
+export interface OutboxItem {
+  /** `${table}:${id}` — one pending entry per record, the latest change wins */
+  k: string
+  table: SyncTable
+  id: string
+  op: 'upsert' | 'delete'
+  /** user id the change belongs to; only sent while that user is logged in to the cloud */
+  owner: string
+}
+
+// Local edits are queued for the cloud through this hook (set by sync.ts).
+// Writes that come *from* the cloud pass { remote: true } so they are not sent back.
+type Hook = (item: Omit<OutboxItem, 'k' | 'owner'>) => void
+let outboxHook: Hook | null = null
+export const setOutboxHook = (h: Hook | null) => (outboxHook = h)
+type Opt = { remote?: boolean }
+const queue = (table: SyncTable, id: string, op: OutboxItem['op'], o?: Opt) => {
+  if (!o?.remote) outboxHook?.({ table, id, op })
+}
+
 export const db = {
   // events
   eventsByParto: (partoId: string) =>
     tx<DuleEvent[]>('events', 'readonly', (s) => s.index('partoId').getAll(partoId)).then((list) =>
       list.sort((a, b) => a.inicio - b.inicio),
     ),
-  putEvent: (e: DuleEvent) => tx('events', 'readwrite', (s) => s.put(e)),
-  deleteEvent: (id: string) => tx('events', 'readwrite', (s) => s.delete(id)),
+  putEvent: (e: DuleEvent, o?: Opt) => tx('events', 'readwrite', (s) => s.put(e)).then(() => queue('events', e.id, 'upsert', o)),
+  deleteEvent: (id: string, o?: Opt) => tx('events', 'readwrite', (s) => s.delete(id)).then(() => queue('events', id, 'delete', o)),
+  getEvent: (id: string) => tx<DuleEvent | undefined>('events', 'readonly', (s) => s.get(id)),
   allEvents: () => tx<DuleEvent[]>('events', 'readonly', (s) => s.getAll()),
 
   // partos
   partos: () => tx<Parto[]>('partos', 'readonly', (s) => s.getAll()),
-  putParto: (p: Parto) => tx('partos', 'readwrite', (s) => s.put(p)),
+  putParto: (p: Parto, o?: Opt) => tx('partos', 'readwrite', (s) => s.put(p)).then(() => queue('partos', p.id, 'upsert', o)),
+  deleteParto: (id: string, o?: Opt) => tx('partos', 'readwrite', (s) => s.delete(id)).then(() => queue('partos', id, 'delete', o)),
 
   // audio
-  putAudio: (id: string, blob: Blob) => tx('audio', 'readwrite', (s) => s.put(blob, id)),
+  putAudio: (id: string, blob: Blob, o?: Opt) => tx('audio', 'readwrite', (s) => s.put(blob, id)).then(() => queue('audio', id, 'upsert', o)),
   getAudio: (id: string) => tx<Blob | undefined>('audio', 'readonly', (s) => s.get(id)),
-  deleteAudio: (id: string) => tx('audio', 'readwrite', (s) => s.delete(id)),
+  deleteAudio: (id: string, o?: Opt) => tx('audio', 'readwrite', (s) => s.delete(id)).then(() => queue('audio', id, 'delete', o)),
 
   // settings (one per user; the un-suffixed key is the pre-accounts legacy value)
   getSettings: (userId?: string) =>
     tx<Settings | undefined>('kv', 'readonly', (s) => s.get(userId ? `settings:${userId}` : 'settings')),
-  putSettings: (v: Settings, userId?: string) =>
-    tx('kv', 'readwrite', (s) => s.put(v, userId ? `settings:${userId}` : 'settings')),
+  putSettings: (v: Settings, userId?: string, o?: Opt) =>
+    tx('kv', 'readwrite', (s) => s.put(v, userId ? `settings:${userId}` : 'settings')).then(
+      () => userId && queue('settings', userId, 'upsert', o),
+    ),
+  deleteSettings: (userId: string) => tx('kv', 'readwrite', (s) => s.delete(`settings:${userId}`)),
 
   // users
   users: () => tx<Usuario[]>('users', 'readonly', (s) => s.getAll()),
   putUser: (u: Usuario) => tx('users', 'readwrite', (s) => s.put(u)),
+  deleteUser: (id: string) => tx('users', 'readwrite', (s) => s.delete(id)),
+
+  // outbox
+  outbox: () => tx<OutboxItem[]>('outbox', 'readonly', (s) => s.getAll()),
+  putOutbox: (i: OutboxItem) => tx('outbox', 'readwrite', (s) => s.put(i)),
+  deleteOutbox: (k: string) => tx('outbox', 'readwrite', (s) => s.delete(k)),
 }
 
 export const uid = () =>

@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { db, onDbChange } from '../db'
+import { adminLiberado } from '../sync'
 import { StoreProvider } from '../store'
 import App from '../App'
 import { phaseById } from '../content'
@@ -17,20 +18,22 @@ interface Linha {
 const fmtData = (t: number) =>
   new Date(t).toLocaleString('pt-BR', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })
 
-export function Admin({ onLogout }: { onLogout: () => void }) {
+export function Admin({ onLogout, nuvem }: { onLogout: () => void; nuvem: boolean }) {
   const [users, setUsers] = useState<Usuario[]>([])
   const [partos, setPartos] = useState<Parto[]>([])
   const [events, setEvents] = useState<DuleEvent[]>([])
   const [aba, setAba] = useState<'dashboard' | 'historico' | 'tela'>('dashboard')
   const [vendo, setVendo] = useState<Usuario | null>(null)
   const [atualizado, setAtualizado] = useState<number | null>(null)
+  const [liberado, setLiberado] = useState<boolean | null>(null)
   const [filtro, setFiltro] = useState('todos')
   const [msg, setMsg] = useState<string | null>(null)
   const [now, setNow] = useState(Date.now())
 
   const carregar = useCallback(async () => {
     const [u, p, e] = await Promise.all([db.users(), db.partos(), db.allEvents()])
-    setUsers(u.sort((a, b) => a.nome.localeCompare(b.nome)))
+    setUsers(u.filter((x) => x.chave !== 'admindule').sort((a, b) => a.nome.localeCompare(b.nome)))
+    setLiberado(adminLiberado())
     setPartos(p)
     setEvents(e)
     setNow(Date.now())
@@ -175,8 +178,18 @@ export function Admin({ onLogout }: { onLogout: () => void }) {
         </button>
       </div>
       <p className="admin-live">
-        <span className="live-dot" aria-hidden /> Ao vivo{atualizado ? ` · atualizado às ${fmtClock(atualizado)}` : ''}
+        <span className="live-dot" aria-hidden /> {nuvem ? 'Ao vivo · nuvem' : 'Só este celular'}
+        {atualizado ? ` · atualizado às ${fmtClock(atualizado)}` : ''}
       </p>
+      {!nuvem && (
+        <p className="admin-aviso">Sem conexão com a nuvem: mostrando só os dados deste celular. Entre de novo com internet.</p>
+      )}
+      {nuvem && liberado === false && (
+        <p className="admin-aviso">
+          A conta admin ainda não foi liberada na nuvem, então só aparecem os dados deste celular. Rode o passo 2 do SQL no
+          Supabase e atualize esta tela.
+        </p>
+      )}
 
       {aba !== 'tela' && (
         <label className="admin-filter">
