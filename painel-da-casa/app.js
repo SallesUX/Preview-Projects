@@ -51,7 +51,8 @@
       },
       activeList: 'Compras',
       settings: { standbyMin: 3, slideSec: 12, feedUrl: '', voiceRate: 1 },
-      gcal: { events: [], at: 0 }
+      gcal: { events: [], at: 0 },
+      recipes: seedRecipes()
     };
   }
   var S;
@@ -215,8 +216,9 @@
   });
 
   // ---------- modal / formulários ----------
-  function openModal(title, html, onReady) {
+  function openModal(title, html, onReady, wide) {
     $('#modalTitle').textContent = title; $('#modalBody').innerHTML = html;
+    $('.modal-box').classList.toggle('wide', !!wide); $('.modal-box').scrollTop = 0;
     $('#modal').classList.remove('hidden'); if (onReady) onReady($('#modalBody'));
   }
   function closeModal() { $('#modal').classList.add('hidden'); }
@@ -455,6 +457,7 @@
   function handleCommand(raw) {
     var t = norm(raw).replace(/[.!?]/g, '').trim(), m;
     toast('🗣️ "' + raw + '"', 2500);
+    if (extrasCommand(t)) return;
     // "adicionar leite e ovos na lista de compras"
     if ((m = t.match(/^(?:adiciona(?:r)?|adicione|coloca(?:r)?|coloque|inclui(?:r)?|bota(?:r)?)\s+(.+?)\s+(?:na|a|à|nas|em)\s+(?:lista\s+(?:de\s+|do\s+|da\s+)?)?(.+)$/))) {
       var listName = findList(m[2]);
@@ -515,6 +518,241 @@
   $('#micBtn').addEventListener('click', startListening);
   if (window.speechSynthesis) speechSynthesis.onvoiceschanged = function () {};
   window.painelComando = handleCommand; // para testes no console
+
+  // ---------- mais funções: timer, cronômetro, pesquisa, receitas ----------
+  if (!S.recipes) S.recipes = seedRecipes();
+  function seedRecipes() {
+    return [
+      { id: uid(), title: 'Bolo de cenoura', time: 40, serves: '10 fatias', tag: 'Doce',
+        ingredients: ['3 cenouras médias', '3 ovos', '1 xícara de óleo', '2 xícaras de açúcar', '2 xícaras de farinha de trigo', '1 colher (sopa) de fermento'],
+        steps: 'Bata no liquidificador a cenoura, os ovos e o óleo.\nMisture com o açúcar e a farinha, e por último o fermento.\nAsse em forno médio (180 °C) por cerca de 40 minutos.' },
+      { id: uid(), title: 'Arroz soltinho', time: 20, serves: '4 pessoas', tag: 'Básico',
+        ingredients: ['2 xícaras de arroz', '4 xícaras de água quente', '1 dente de alho', '1 colher (sopa) de óleo', 'Sal a gosto'],
+        steps: 'Refogue o alho no óleo e junte o arroz.\nAcrescente a água quente e o sal.\nCozinhe em fogo baixo com a panela semitampada até secar (cerca de 20 minutos).' }
+    ];
+  }
+  function fmtClock(ms, withTenths) {
+    ms = Math.max(0, ms); var s = Math.floor(ms / 1000), h = Math.floor(s / 3600), m = Math.floor(s / 60) % 60, ss = s % 60;
+    return (h ? h + ':' + pad(m) : pad(m)) + ':' + pad(ss) + (withTenths ? ',' + Math.floor(ms % 1000 / 100) : '');
+  }
+
+  // estado dos relógios (fica na memória enquanto o painel está aberto)
+  var T = { end: 0, total: 0, paused: 0, label: '', ringing: false };
+  var W = { start: 0, acc: 0, running: false, laps: [] };
+  var audioCtx = null, ringTimer = null;
+  function unlockAudio() {
+    var AC = window.AudioContext || window.webkitAudioContext; if (!AC) return;
+    if (!audioCtx) audioCtx = new AC();
+    if (audioCtx.state === 'suspended' && audioCtx.resume) audioCtx.resume();
+  }
+  function beep() {
+    if (!audioCtx) return;
+    [0, 0.25, 0.5].forEach(function (d) {
+      var o = audioCtx.createOscillator(), g = audioCtx.createGain(), t0 = audioCtx.currentTime + d;
+      o.frequency.value = 880; o.connect(g); g.connect(audioCtx.destination);
+      g.gain.setValueAtTime(0.0001, t0); g.gain.exponentialRampToValueAtTime(0.4, t0 + 0.02); g.gain.exponentialRampToValueAtTime(0.0001, t0 + 0.2);
+      o.start(t0); o.stop(t0 + 0.22);
+    });
+  }
+  function startTimer(min, label) {
+    unlockAudio(); stopRing();
+    T.total = Math.round(min * 60000); T.end = Date.now() + T.total; T.paused = 0; T.label = label || '';
+    updatePill();
+  }
+  function stopRing() { T.ringing = false; clearInterval(ringTimer); updatePill(); }
+  function timerLeft() { return T.paused ? T.paused : (T.end ? T.end - Date.now() : 0); }
+  function clockTick() {
+    if (T.end && !T.paused && !T.ringing && Date.now() >= T.end) {
+      T.end = 0; T.ringing = true; beep(); ringTimer = setInterval(beep, 1500);
+      setTimeout(stopRing, 60000);
+      say((T.label ? T.label + ': ' : '') + 'o tempo acabou!');
+      if (inStandby) exitStandby();
+    }
+    updatePill();
+    var el = document.getElementById('tmDisplay');
+    if (el) {
+      el.textContent = T.ringing ? '00:00' : fmtClock(timerLeft() + (T.end && !T.paused ? 999 : 0));
+      var b = document.getElementById('tmBar'); if (b) b.style.width = (T.total && (T.end || T.paused) ? (1 - timerLeft() / T.total) * 100 : 0) + '%';
+    }
+    var sw = document.getElementById('swDisplay');
+    if (sw) sw.textContent = fmtClock(W.acc + (W.running ? Date.now() - W.start : 0), true);
+  }
+  setInterval(clockTick, 200);
+  function updatePill() {
+    var p = $('#timerPill'), on = T.ringing || T.end || T.paused || W.running;
+    p.classList.toggle('hidden', !on); p.classList.toggle('ringing', T.ringing);
+    if (!on) return;
+    var txt = T.ringing ? 'Tempo esgotado! Toque para parar' :
+      (T.end || T.paused) ? (T.label ? T.label + ' · ' : '') + fmtClock(timerLeft() + (T.paused ? 0 : 999)) + (T.paused ? ' (pausado)' : '') :
+      'Cronômetro · ' + fmtClock(W.acc + Date.now() - W.start);
+    $('#timerPillText').textContent = txt;
+  }
+  $('#timerPill').addEventListener('click', function () { if (T.ringing) stopRing(); else openTimer(); });
+
+  function openTimer(tab) {
+    tab = tab || (W.running && !T.end ? 'sw' : 'tm');
+    openModal('Cronômetro e timer',
+      '<div class="seg"><button data-tab="tm" class="' + (tab === 'tm' ? 'on' : '') + '">Timer</button><button data-tab="sw" class="' + (tab === 'sw' ? 'on' : '') + '">Cronômetro</button></div>' +
+      '<div id="tmPane" class="' + (tab === 'tm' ? '' : 'hidden') + '">' +
+        '<div class="big-clock" id="tmDisplay">00:00</div><div class="ring big"><div id="tmBar"></div></div>' +
+        '<div class="presets">' + [1, 3, 5, 10, 15, 20, 30, 45, 60].map(function (m) { return '<button data-min="' + m + '">' + m + ' min</button>'; }).join('') + '</div>' +
+        '<div class="row center"><input id="tmCustom" type="number" min="1" placeholder="min" class="mini-input"><button class="btn ghost" id="tmGo">Iniciar</button>' +
+        '<button class="btn ghost" id="tmPause">Pausar</button><button class="btn danger" id="tmStop">Zerar</button></div>' +
+      '</div>' +
+      '<div id="swPane" class="' + (tab === 'sw' ? '' : 'hidden') + '">' +
+        '<div class="big-clock" id="swDisplay">00:00,0</div>' +
+        '<div class="row center"><button class="btn" id="swStart"></button><button class="btn ghost" id="swLap">Volta</button><button class="btn danger" id="swReset">Zerar</button></div>' +
+        '<ol class="laps" id="swLaps"></ol>' +
+      '</div>', function (root) {
+        function swBtn() { $('#swStart').textContent = W.running ? 'Pausar' : (W.acc ? 'Continuar' : 'Iniciar'); }
+        function laps() { $('#swLaps').innerHTML = W.laps.map(function (l, i) { return '<li><span>Volta ' + (i + 1) + '</span><span>' + fmtClock(l, true) + '</span></li>'; }).reverse().join(''); }
+        function pauseLbl() { $('#tmPause').textContent = T.paused ? 'Continuar' : 'Pausar'; }
+        swBtn(); laps(); pauseLbl(); clockTick();
+        Array.prototype.forEach.call(root.querySelectorAll('.seg button'), function (b) {
+          b.onclick = function () {
+            var t = b.getAttribute('data-tab');
+            root.querySelectorAll('.seg button')[0].classList.toggle('on', t === 'tm'); root.querySelectorAll('.seg button')[1].classList.toggle('on', t === 'sw');
+            $('#tmPane').classList.toggle('hidden', t !== 'tm'); $('#swPane').classList.toggle('hidden', t !== 'sw');
+          };
+        });
+        root.querySelector('.presets').onclick = function (e) { var b = e.target.closest('[data-min]'); if (b) { startTimer(+b.getAttribute('data-min')); pauseLbl(); } };
+        $('#tmGo').onclick = function () { var v = +$('#tmCustom').value; if (v > 0) { startTimer(v); pauseLbl(); } };
+        $('#tmPause').onclick = function () {
+          if (T.paused) { T.end = Date.now() + T.paused; T.paused = 0; } else if (T.end) { T.paused = T.end - Date.now(); T.end = 0; }
+          pauseLbl(); updatePill();
+        };
+        $('#tmStop').onclick = function () { T.end = 0; T.paused = 0; T.total = 0; stopRing(); pauseLbl(); clockTick(); };
+        $('#swStart').onclick = function () {
+          if (W.running) { W.acc += Date.now() - W.start; W.running = false; } else { W.start = Date.now(); W.running = true; }
+          swBtn(); updatePill();
+        };
+        $('#swLap').onclick = function () { if (!W.running) return; W.laps.push(W.acc + Date.now() - W.start); laps(); };
+        $('#swReset').onclick = function () { W = { start: 0, acc: 0, running: false, laps: [] }; swBtn(); laps(); clockTick(); updatePill(); };
+      }, true);
+  }
+
+  // pesquisa web: abre em nova aba (sites não podem ser embutidos no painel)
+  function webSearch(q) {
+    if (!q) return;
+    window.open('https://www.google.com/search?q=' + encodeURIComponent(q), '_blank');
+  }
+  function openSearch() {
+    openModal('Pesquisar na web',
+      '<form id="wsForm" class="quick big"><input id="wsInput" placeholder="O que você quer pesquisar?" autocomplete="off"><button type="submit" class="round dark" aria-label="Pesquisar">' + ic('search') + '</button></form>' +
+      '<p class="hint">Abre o resultado em uma nova aba. Dica: diga "pesquisar previsão do tempo" no microfone.</p>' +
+      '<div class="presets left">' + ['Previsão do tempo', 'Notícias de hoje', 'Cotação do dólar', 'Farmácia aberta perto de mim', 'Receita de pão caseiro'].map(function (s) { return '<button data-q="' + esc(s) + '">' + esc(s) + '</button>'; }).join('') + '</div>',
+      function (root) {
+        $('#wsInput').focus();
+        $('#wsForm').onsubmit = function (e) { e.preventDefault(); webSearch($('#wsInput').value.trim()); };
+        root.querySelector('.presets').onclick = function (e) { var b = e.target.closest('[data-q]'); if (b) webSearch(b.getAttribute('data-q')); };
+      }, true);
+  }
+
+  // receitas
+  function openRecipes(filter) {
+    filter = filter || '';
+    openModal('Receitas',
+      '<div class="row"><form id="rcSearch" class="quick" style="flex:1;margin:0"><input id="rcQ" placeholder="Buscar receita ou ingrediente…" value="' + esc(filter) + '" autocomplete="off"></form>' +
+      '<button class="btn" id="rcNew">+ Nova receita</button></div>' +
+      '<div class="rc-grid" id="rcGrid"></div>', function () {
+        function draw() {
+          var q = norm($('#rcQ').value.trim());
+          var list = S.recipes.filter(function (r) { return !q || norm(r.title + ' ' + (r.tag || '') + ' ' + r.ingredients.join(' ')).indexOf(q) >= 0; })
+            .sort(function (a, b) { return a.title.localeCompare(b.title); });
+          $('#rcGrid').innerHTML = list.length ? list.map(function (r, i) {
+            return '<button class="rc-card c' + (i % 3) + '" data-id="' + r.id + '"><span class="rc-tag">' + esc(r.tag || 'Receita') + '</span>' +
+              '<span class="rc-title">' + esc(r.title) + '</span><span class="rc-meta">' + ic('clock') + (r.time ? r.time + ' min' : '—') + (r.serves ? ' · ' + esc(r.serves) : '') + '</span></button>';
+          }).join('') : '<p class="empty">Nenhuma receita encontrada.</p>';
+        }
+        draw();
+        $('#rcQ').oninput = draw; $('#rcSearch').onsubmit = function (e) { e.preventDefault(); };
+        $('#rcNew').onclick = function () { openRecipeForm(); };
+        $('#rcGrid').onclick = function (e) { var c = e.target.closest('[data-id]'); if (c) openRecipe(c.getAttribute('data-id')); };
+      }, true);
+  }
+  function findRecipe(id) { return S.recipes.filter(function (r) { return r.id === id; })[0]; }
+  function openRecipe(id) {
+    var r = findRecipe(id); if (!r) return;
+    openModal(r.title,
+      '<div class="rc-head"><span class="chip">' + esc(r.tag || 'Receita') + '</span>' + (r.time ? '<span class="chip">' + r.time + ' min</span>' : '') + (r.serves ? '<span class="chip">' + esc(r.serves) + '</span>' : '') + '</div>' +
+      '<div class="rc-body"><div><h4>Ingredientes</h4><ul class="rc-ing">' + r.ingredients.map(function (i) { return '<li>' + esc(i) + '</li>'; }).join('') + '</ul></div>' +
+      '<div><h4>Modo de preparo</h4><ol class="rc-steps">' + r.steps.split(/\n+/).filter(Boolean).map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ol></div></div>' +
+      '<div class="row">' + (r.time ? '<button class="btn" id="rcTimer">' + ic('clock') + ' Timer de ' + r.time + ' min</button>' : '') +
+      '<button class="btn ghost" id="rcShop">' + ic('cart') + ' Ingredientes nas compras</button>' +
+      '<button class="btn ghost" id="rcEdit">Editar</button><button class="btn ghost" id="rcBack">Voltar</button></div>', function () {
+        if (r.time) $('#rcTimer').onclick = function () { startTimer(r.time, r.title); closeModal(); toast('Timer de ' + r.time + ' min iniciado para ' + r.title + '.'); };
+        $('#rcShop').onclick = function () {
+          r.ingredients.forEach(function (i) { addToList('Compras', i); });
+          S.activeList = 'Compras'; save(); renderLists(); toast(r.ingredients.length + ' ingredientes adicionados em Compras.');
+        };
+        $('#rcEdit').onclick = function () { openRecipeForm(r); };
+        $('#rcBack').onclick = function () { openRecipes(); };
+      }, true);
+  }
+  function openRecipeForm(r) {
+    var isNew = !r; r = r || { title: '', time: '', serves: '', tag: '', ingredients: [], steps: '' };
+    openModal(isNew ? 'Nova receita' : 'Editar receita',
+      '<div class="field"><label>Nome</label><input id="rfTitle" value="' + esc(r.title) + '" placeholder="Ex.: Lasanha da vó"></div>' +
+      '<div class="row"><div class="field" style="flex:1"><label>Tempo (min)</label><input id="rfTime" type="number" min="0" value="' + esc(r.time) + '"></div>' +
+      '<div class="field" style="flex:1"><label>Rende</label><input id="rfServes" value="' + esc(r.serves) + '" placeholder="Ex.: 6 porções"></div>' +
+      '<div class="field" style="flex:1"><label>Categoria</label><input id="rfTag" value="' + esc(r.tag) + '" placeholder="Ex.: Doce, Almoço"></div></div>' +
+      '<div class="field"><label>Ingredientes (um por linha)</label><textarea id="rfIng" rows="6">' + esc(r.ingredients.join('\n')) + '</textarea></div>' +
+      '<div class="field"><label>Modo de preparo (um passo por linha)</label><textarea id="rfSteps" rows="6">' + esc(r.steps) + '</textarea></div>' +
+      '<div class="row"><button class="btn" id="rfSave">Salvar</button>' + (isNew ? '' : '<button class="btn danger" id="rfDel">Excluir</button>') + '<button class="btn ghost" id="rfCancel">Cancelar</button></div>',
+      function () {
+        $('#rfTitle').focus();
+        $('#rfSave').onclick = function () {
+          var t = $('#rfTitle').value.trim(); if (!t) return;
+          var data = { title: t, time: +$('#rfTime').value || 0, serves: $('#rfServes').value.trim(), tag: $('#rfTag').value.trim(),
+            ingredients: $('#rfIng').value.split('\n').map(function (x) { return x.trim(); }).filter(Boolean), steps: $('#rfSteps').value.trim() };
+          if (isNew) { data.id = uid(); S.recipes.push(data); } else { for (var k in data) r[k] = data[k]; }
+          save(); openRecipe(isNew ? data.id : r.id);
+        };
+        if (!isNew) $('#rfDel').onclick = function (ev) { if (confirmInline(ev.target)) { S.recipes = S.recipes.filter(function (x) { return x.id !== r.id; }); save(); openRecipes(); } };
+        $('#rfCancel').onclick = function () { isNew ? openRecipes() : openRecipe(r.id); };
+      }, true);
+  }
+
+  // menu "mais"
+  function openMore() {
+    var items = [
+      { k: 'timer', t: 'Cronômetro', s: 'Timer e cronômetro', i: 'clock', c: 'c0' },
+      { k: 'search', t: 'Pesquisa', s: 'Buscar na web', i: 'search', c: 'c1' },
+      { k: 'recipes', t: 'Receitas', s: S.recipes.length + ' salvas', i: 'book', c: 'c2' }
+    ];
+    openModal('Mais funções', '<div class="more-grid">' + items.map(function (x) {
+      return '<button class="more-tile ' + x.c + '" data-k="' + x.k + '"><span class="more-ic">' + ic(x.i) + '</span><span class="more-t">' + x.t + '</span><span class="more-s">' + x.s + '</span></button>';
+    }).join('') + '</div>', function (root) {
+      root.querySelector('.more-grid').onclick = function (e) {
+        var b = e.target.closest('[data-k]'); if (!b) return; var k = b.getAttribute('data-k');
+        if (k === 'timer') openTimer(); else if (k === 'search') openSearch(); else openRecipes();
+      };
+    }, true);
+  }
+  $('#moreBtn').addEventListener('click', openMore);
+
+  // comandos de voz extras
+  var NUM = { um: 1, uma: 1, dois: 2, duas: 2, tres: 3, quatro: 4, cinco: 5, seis: 6, sete: 7, oito: 8, nove: 9, dez: 10, quinze: 15, vinte: 20, trinta: 30, quarenta: 40, cinquenta: 50, sessenta: 60, meia: 0.5 };
+  function toNum(w) { return isNaN(+w) ? NUM[w] : +w; }
+  function extrasCommand(t) {
+    var m;
+    if ((m = t.match(/(?:timer|temporizador|alarme|cronometro|contar)\s+(?:de\s+|para\s+|por\s+)?(\d+|[a-z]+)\s+(minutos?|segundos?|horas?)/)) && toNum(m[1])) {
+      var n = toNum(m[1]), min = /seg/.test(m[2]) ? n / 60 : /hora/.test(m[2]) ? n * 60 : n;
+      startTimer(min); say('Timer de ' + m[1] + ' ' + m[2] + ' iniciado.'); return true;
+    }
+    if (/(parar|cancelar|desligar|zerar).*(timer|alarme|temporizador)/.test(t) || (T.ringing && /^(parar|para|ok|chega)$/.test(t))) {
+      T.end = 0; T.paused = 0; stopRing(); say('Timer cancelado.'); return true;
+    }
+    if (/quanto tempo falta/.test(t)) { say(T.end ? 'Faltam ' + fmtClock(timerLeft() + 999) + '.' : 'Nenhum timer ligado.'); return true; }
+    if (/^(iniciar|abrir|ligar)?\s*cronometro$/.test(t)) { W = { start: Date.now(), acc: 0, running: true, laps: [] }; openTimer('sw'); say('Cronômetro iniciado.'); return true; }
+    if ((m = t.match(/^(?:pesquisa(?:r)?|pesquise|procura(?:r)?|procure|buscar|busque|google)\s+(?:por\s+|sobre\s+)?(.+)$/))) { say('Pesquisando ' + m[1] + '.'); webSearch(m[1]); return true; }
+    if ((m = t.match(/(?:receita|receitas)(?:\s+(?:de|do|da))?\s*(.*)$/)) && !/adicion|coloc/.test(t)) {
+      var q = m[1].trim(), hit = q && S.recipes.filter(function (r) { return norm(r.title).indexOf(q) >= 0; })[0];
+      if (hit) { openRecipe(hit.id); say('Abrindo ' + hit.title + '.'); } else { openRecipes(q); say(q ? 'Não achei "' + q + '". Veja as receitas salvas.' : 'Suas receitas.'); }
+      return true;
+    }
+    return false;
+  }
 
   // ---------- início ----------
   function renderAll() { renderRoutine(); renderAgenda(); renderLists(); }

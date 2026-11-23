@@ -16,6 +16,13 @@ Funciona também no computador e no celular.
   - "marcar academia como feito" / "terminei regar as plantas"
   - "o que tem na lista de compras" / "limpar comprados"
   - "modo standby" / "que horas são"
+  - "timer de 10 minutos" / "parar timer" / "quanto tempo falta" / "iniciar cronômetro"
+  - "pesquisar previsão do tempo"
+  - "receita de bolo de cenoura" / "receitas"
+- **Mais funções** (botão de quadradinhos):
+  - **Timer e cronômetro**: atalhos de 1 a 60 min, pausa e alarme sonoro. O tempo aparece no topo da tela mesmo com a janela fechada.
+  - **Pesquisa na web**: abre o Google numa nova aba.
+  - **Receitas**: cadastrar, buscar por nome ou ingrediente, ler em letra grande, mandar os ingredientes para a lista de Compras e iniciar o timer da receita.
 
 Os dados ficam salvos no próprio aparelho (localStorage). Use **⚙️ > Exportar backup** de vez em quando.
 
