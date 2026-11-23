@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
-<meta name="theme-color" content="#0f1720">
+<meta name="theme-color" content="#f4efe8">
 <meta name="mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <title>Painel da Casa</title>
@@ -12,57 +12,97 @@
 <link rel="stylesheet" href="style.css">
 </head>
 <body>
-<div id="bg"></div>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/></symbol>
+  </defs>
+</svg>
 
+<div id="app">
 <main id="home">
-  <header class="top">
+  <!-- Coluna 1: relógio e resumo -->
+  <aside class="col side">
+    <div class="brand">
+      <span class="logo"><svg><use xlink:href="#i-clock" href="#i-clock"/></svg></span>
+      <span>Nossa Casa</span>
+    </div>
     <div class="clock">
       <div id="time">--:--</div>
       <div id="date">&nbsp;</div>
     </div>
-    <div class="greet" id="greet"></div>
-    <div class="actions">
-      <button class="icon-btn" id="micBtn" title="Falar com o painel">🎤</button>
-      <button class="icon-btn" id="standbyBtn" title="Modo standby">🖼️</button>
-      <button class="icon-btn" id="settingsBtn" title="Configurações">⚙️</button>
+    <p class="greet" id="greet"></p>
+
+    <div class="tile tile-peach">
+      <div class="tile-art"></div>
+      <p class="tile-label">Rotina</p>
+      <p class="tile-big" id="tileRoutine">0 de 0</p>
+      <p class="tile-sub" id="tileRoutineSub">tarefas feitas</p>
+      <div class="ring"><div id="routineBar"></div></div>
     </div>
-  </header>
+    <div class="tile tile-sage">
+      <div class="tile-art"></div>
+      <p class="tile-label">Próximo</p>
+      <p class="tile-big" id="tileNext">—</p>
+      <p class="tile-sub" id="tileNextSub"></p>
+    </div>
 
-  <section class="grid">
-    <article class="card" id="routineCard">
-      <div class="card-head">
+    <div class="actions">
+      <button class="round dark" id="micBtn" title="Falar com o painel"><svg><use xlink:href="#i-mic" href="#i-mic"/></svg></button>
+      <button class="round" id="standbyBtn" title="Modo standby"><svg><use xlink:href="#i-photo" href="#i-photo"/></svg></button>
+      <button class="round" id="settingsBtn" title="Configurações"><svg><use xlink:href="#i-gear" href="#i-gear"/></svg></button>
+    </div>
+  </aside>
+
+  <!-- Coluna 2: rotina -->
+  <section class="col paper" id="routineCard">
+    <div class="card-head">
+      <div>
         <h2>Rotina de hoje</h2>
-        <span class="pill" id="routineProgress">0/0</span>
+        <p class="sub" id="routineSub"></p>
       </div>
-      <div class="progress"><div id="routineBar"></div></div>
-      <ul class="list" id="routineList"></ul>
-      <button class="add" data-add="routine">+ Tarefa</button>
-    </article>
+      <button class="round dark" data-add="routine" title="Nova tarefa"><svg><use xlink:href="#i-plus" href="#i-plus"/></svg></button>
+    </div>
+    <ul class="list" id="routineList"></ul>
+  </section>
 
-    <article class="card" id="agendaCard">
+  <!-- Coluna 3: agenda + listas -->
+  <section class="col stack">
+    <div class="block" id="agendaCard">
       <div class="card-head">
-        <h2>Agenda</h2>
-        <span class="pill muted" id="syncState">local</span>
+        <h3>Agenda</h3>
+        <div class="row-tight">
+          <span class="chip" id="syncState">local</span>
+          <button class="link" data-add="event">+ Novo</button>
+        </div>
       </div>
       <div id="agendaList"></div>
-      <button class="add" data-add="event">+ Compromisso</button>
-    </article>
+    </div>
 
-    <article class="card" id="listsCard">
+    <div class="block grow" id="listsCard">
       <div class="card-head">
-        <h2>Listas</h2>
+        <h3>Listas</h3>
       </div>
       <div class="tabs" id="listTabs"></div>
       <form id="quickAdd" class="quick">
         <input id="quickInput" placeholder="Adicionar item…" autocomplete="off">
-        <button type="submit">+</button>
+        <button type="submit" class="round dark small" aria-label="Adicionar"><svg><use xlink:href="#i-plus" href="#i-plus"/></svg></button>
       </form>
-      <ul class="list" id="listItems"></ul>
-    </article>
+      <ul class="list compact" id="listItems"></ul>
+    </div>
   </section>
-
-  <div id="voiceToast" class="toast hidden"></div>
 </main>
+</div>
+
+<div id="voiceToast" class="toast hidden"></div>
 
 <!-- Standby -->
 <section id="standby" class="hidden">
@@ -74,8 +114,8 @@
       <div id="sbDate"></div>
     </div>
     <div class="sb-side">
-      <div class="sb-cal" id="sbCal"></div>
-      <div class="sb-next" id="sbNext"></div>
+      <div class="sb-card sb-cal" id="sbCal"></div>
+      <div class="sb-card sb-next" id="sbNext"></div>
     </div>
   </div>
   <div class="sb-hint">Toque para voltar</div>
@@ -86,7 +126,7 @@
   <div class="modal-box">
     <div class="modal-head">
       <h3 id="modalTitle"></h3>
-      <button class="icon-btn small" id="modalClose">✕</button>
+      <button class="round small" id="modalClose" aria-label="Fechar"><svg><use xlink:href="#i-x" href="#i-x"/></svg></button>
     </div>
     <div id="modalBody"></div>
   </div>

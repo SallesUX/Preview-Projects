@@ -10,6 +10,7 @@
   function pad(n) { return (n < 10 ? '0' : '') + n; }
   function ymd(d) { return d.getFullYear() + '-' + pad(d.getMonth() + 1) + '-' + pad(d.getDate()); }
   function hm(d) { return pad(d.getHours()) + ':' + pad(d.getMinutes()); }
+  function ic(n) { return '<svg><use xlink:href="#i-' + n + '" href="#i-' + n + '"/></svg>'; }
   function uid() { return Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
   function esc(s) { return String(s == null ? '' : s).replace(/[&<>"']/g, function (c) { return { '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]; }); }
   function norm(s) { return String(s || '').toLowerCase().normalize ? String(s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '') : String(s).toLowerCase(); }
@@ -70,7 +71,7 @@
     $('#date').textContent = ld;
     $('#sbDate').textContent = ld;
     var pend = todayRoutine().filter(function (r) { return !isDone(r); }).length;
-    $('#greet').textContent = greeting(d.getHours()) + (pend ? ' Faltam ' + pend + ' tarefa' + (pend > 1 ? 's' : '') + ' hoje.' : ' Tudo feito por hoje 🎉');
+    $('#greet').textContent = greeting(d.getHours()) + (pend ? ' Faltam ' + pend + ' tarefa' + (pend > 1 ? 's' : '') + ' hoje.' : ' Tudo feito por hoje.');
     if (ymd(d) !== lastDay) { lastDay = ymd(d); today = d; renderAll(); }
     if (d.getSeconds() === 0) renderRoutine();
   }
@@ -98,13 +99,16 @@
       var isNow = !d && !nowSet && r.time && r.time <= now && (!next || !next.time || next.time > now);
       if (isNow) nowSet = true;
       return '<li class="' + (d ? 'done ' : '') + (isNow ? 'now' : '') + '" data-id="' + r.id + '">' +
-        '<button class="check" data-act="toggle">' + (d ? '✓' : '') + '</button>' +
-        '<span class="meta">' + esc(r.time || '') + '</span>' +
-        '<span class="label">' + esc(r.title) + '</span>' +
-        '<button class="del" data-act="edit" title="Editar">✎</button></li>';
+        '<button class="check" data-act="toggle">' + (d ? ic('check') : '') + '</button>' +
+        '<span class="label">' + esc(r.title) + (isNow ? '<span class="badge">agora</span>' : '') + '</span>' +
+        (r.time ? '<span class="meta">' + ic('clock') + esc(r.time) + '</span>' : '') +
+        '<button class="del" data-act="edit" title="Editar">' + ic('edit') + '</button></li>';
     }).join('');
     $('#routineList').innerHTML = html || '<li class="empty">Nenhuma tarefa para hoje.</li>';
-    $('#routineProgress').textContent = doneN + '/' + items.length;
+    var left = items.length - doneN;
+    $('#routineSub').textContent = items.length ? (left ? left + ' para fazer · ' + doneN + ' concluída' + (doneN === 1 ? '' : 's') : 'Tudo concluído por hoje') : '';
+    $('#tileRoutine').textContent = doneN + ' de ' + items.length;
+    $('#tileRoutineSub').textContent = left ? 'tarefas feitas' : 'dia completo!';
     $('#routineBar').style.width = (items.length ? doneN / items.length * 100 : 0) + '%';
   }
   $('#routineList').addEventListener('click', function (e) {
@@ -133,24 +137,24 @@
     return DIAS_LONGO[d.getDay()] + ', ' + d.getDate() + '/' + pad(d.getMonth() + 1);
   }
   function renderAgenda() {
-    var evs = allEvents(new Date(), 7), groups = {}, order = [];
-    evs.forEach(function (e) { if (!groups[e.date]) { groups[e.date] = []; order.push(e.date); } groups[e.date].push(e); });
-    if (order.indexOf(ymd(new Date())) < 0) { order.unshift(ymd(new Date())); groups[ymd(new Date())] = []; }
-    $('#agendaList').innerHTML = order.map(function (d) {
-      return '<div class="day-group"><p class="day-title">' + dayLabel(d) + '</p>' +
-        (groups[d].length ? groups[d].map(function (e) {
-          return '<div class="event"' + (e.id ? ' data-id="' + e.id + '"' : '') + '><div class="bar" style="background:' + (e.color || (e.src === 'google' ? '#ffb74d' : '#4fc3f7')) + '"></div>' +
-            '<div class="t">' + (e.time || 'dia todo') + '</div><div class="n">' + esc(e.title) +
-            (e.who ? '<div class="src">' + esc(e.who) + '</div>' : '') + '</div>' +
-            (e.src === 'local' ? '<button class="del" data-act="del-ev">✕</button>' : '') + '</div>';
-        }).join('') : '<div class="empty">Nada marcado.</div>') + '</div>';
-    }).join('');
+    var evs = allEvents(new Date(), 7);
+    $('#agendaList').innerHTML = evs.length ? evs.map(function (e) {
+      var p = e.date.split('-'), dl = dayLabel(e.date);
+      return '<div class="event"' + (e.id ? ' data-id="' + e.id + '"' : '') + '>' +
+        '<div class="dot"' + (e.color ? ' style="background:' + esc(e.color) + '33"' : '') + '>' + (+p[2]) + '</div>' +
+        '<div class="n">' + esc(e.title) + '<div class="src">' + ic('clock') + (e.time || 'dia todo') + (e.who ? ' · ' + esc(e.who) : '') + '</div></div>' +
+        '<span class="when">' + (dl.indexOf(',') > 0 ? dl.split(',')[0].slice(0, 3) : dl) + '</span>' +
+        (e.src === 'local' ? '<button class="del" data-act="del-ev" title="Apagar">' + ic('x') + '</button>' : '') + '</div>';
+    }).join('') : '<div class="empty">Nada marcado para os próximos dias.</div>';
+    var nx = evs.filter(function (e) { return e.date > ymd(new Date()) || !e.time || e.time >= hm(new Date()); })[0];
+    $('#tileNext').textContent = nx ? nx.title : 'Agenda livre';
+    $('#tileNextSub').textContent = nx ? dayLabel(nx.date).split(',')[0] + (nx.time ? ', ' + nx.time : '') : 'nada nos próximos 7 dias';
     var st = $('#syncState');
     if (S.settings.feedUrl) {
       st.textContent = S.gcal.at ? 'Google ✓ ' + hm(new Date(S.gcal.at)) : 'Google…';
-      st.className = 'pill ' + (S.gcal.err ? 'muted' : 'ok');
+      st.className = 'chip' + (S.gcal.err ? '' : ' ok');
       if (S.gcal.err) st.textContent = 'Google offline';
-    } else { st.textContent = 'local'; st.className = 'pill muted'; }
+    } else { st.textContent = 'local'; st.className = 'chip'; }
   }
   $('#agendaList').addEventListener('click', function (e) {
     var b = e.target.closest('[data-act="del-ev"]'); if (!b) return;
@@ -160,8 +164,8 @@
   // confirmação sem diálogo do navegador: 1º toque arma, 2º toque apaga
   function confirmInline(b) {
     if (b.getAttribute('data-armed')) return true;
-    b.setAttribute('data-armed', '1'); b.textContent = 'apagar?'; b.style.opacity = 1; b.style.color = '#ef6f6c';
-    setTimeout(function () { b.removeAttribute('data-armed'); b.textContent = '✕'; b.style.opacity = ''; b.style.color = ''; }, 3000);
+    var orig = b.innerHTML; b.setAttribute('data-armed', '1'); b.textContent = 'apagar?'; b.style.opacity = 1; b.style.color = '#ef6f6c';
+    setTimeout(function () { b.removeAttribute('data-armed'); b.innerHTML = orig; b.style.opacity = ''; b.style.color = ''; }, 3000);
     return false;
   }
 
@@ -184,8 +188,8 @@
     }).join('') + '<button class="tab" data-list="__new">+</button>';
     var items = (S.lists[S.activeList] || []).slice().sort(function (a, b) { return a.done - b.done; });
     $('#listItems').innerHTML = items.map(function (i) {
-      return '<li class="' + (i.done ? 'done' : '') + '" data-id="' + i.id + '"><button class="check" data-act="toggle">' + (i.done ? '✓' : '') + '</button>' +
-        '<span class="label">' + esc(i.text) + '</span><button class="del" data-act="del">✕</button></li>';
+      return '<li class="' + (i.done ? 'done' : '') + '" data-id="' + i.id + '"><button class="check" data-act="toggle">' + (i.done ? ic('check') : '') + '</button>' +
+        '<span class="label">' + esc(i.text) + '</span><button class="del" data-act="del">' + ic('x') + '</button></li>';
     }).join('') || '<li class="empty">Lista vazia.</li>';
   }
   function addToList(name, text) {
@@ -359,10 +363,9 @@
     el.innerHTML = photoUrls.length ? photoUrls.map(function (u) { return '<div style="background-image:url(' + u + ')"></div>'; }).join('') : '<span class="hint">Sem fotos — o standby usará fundos coloridos.</span>';
   }
   var FALLBACK = [
-    'radial-gradient(circle at 20% 30%,#3a6186 0%,#1b2a3a 60%,#0b1118 100%)',
-    'radial-gradient(circle at 80% 20%,#c06c84 0%,#6c5b7b 40%,#1d1a2b 100%)',
-    'radial-gradient(circle at 30% 80%,#2a9d8f 0%,#264653 55%,#0d1b1e 100%)',
-    'radial-gradient(circle at 70% 60%,#f4a261 0%,#9c4f2e 45%,#1e130c 100%)'
+    'radial-gradient(ellipse at 85% 15%,#f5c9ab 0%,rgba(245,201,171,0) 55%),radial-gradient(ellipse at 10% 90%,#bcd6c9 0%,rgba(188,214,201,0) 60%)',
+    'radial-gradient(ellipse at 15% 20%,#efc2b6 0%,rgba(239,194,182,0) 55%),radial-gradient(ellipse at 90% 85%,#f3d7ae 0%,rgba(243,215,174,0) 60%)',
+    'radial-gradient(ellipse at 75% 75%,#b9d3da 0%,rgba(185,211,218,0) 58%),radial-gradient(ellipse at 20% 15%,#ecdcc4 0%,rgba(236,220,196,0) 55%)'
   ];
 
   // ---------- standby ----------
@@ -372,6 +375,7 @@
     return FALLBACK[i % FALLBACK.length];
   }
   function nextSlide() {
+    $('.sb-overlay').classList.toggle('photo', photoUrls.length > 0);
     var a = $('#slideA'), b = $('#slideB'), show = slideFlip ? a : b, hide = slideFlip ? b : a;
     slideFlip = !slideFlip;
     show.style.backgroundImage = bgFor(slideIdx++);
@@ -393,7 +397,7 @@
     }
     $('#sbCal').innerHTML = h + '</table>';
     var nx = allEvents(d, 7).filter(function (e) { return e.date > ymd(d) || !e.time || e.time >= hm(d); }).slice(0, 4);
-    $('#sbNext').innerHTML = '<h4 style="margin:0 0 6px;font-weight:500">Próximos</h4>' + (nx.length ? nx.map(function (e) {
+    $('#sbNext').innerHTML = '<h4>Próximos</h4>' + (nx.length ? nx.map(function (e) {
       return '<div class="e"><span class="t">' + (e.date === ymd(d) ? (e.time || 'hoje') : dayLabel(e.date).split(',')[0]) + '</span><span>' + esc(e.title) + '</span></div>';
     }).join('') : '<div class="empty">Agenda livre 😌</div>');
   }
@@ -518,7 +522,7 @@
   if (!Element.prototype.closest) Element.prototype.closest = function (s) { var el = this; while (el && el.nodeType === 1) { if ((el.matches || el.webkitMatchesSelector).call(el, s)) return el; el = el.parentElement; } return null; };
 
   renderAll(); tick(); setInterval(tick, 1000);
-  openDB().then(loadPhotos).then(function () { if (photoUrls.length) $('#bg').style.backgroundImage = 'url(' + photoUrls[0] + ')'; });
+  openDB().then(loadPhotos);
   syncGoogle(); setInterval(syncGoogle, 10 * 60000);
   resetIdle();
   if (/[?&]standby/.test(location.search)) enterStandby();
