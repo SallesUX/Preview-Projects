@@ -1,0 +1,97 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0f1720">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Painel da Casa</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<div id="bg"></div>
+
+<main id="home">
+  <header class="top">
+    <div class="clock">
+      <div id="time">--:--</div>
+      <div id="date">&nbsp;</div>
+    </div>
+    <div class="greet" id="greet"></div>
+    <div class="actions">
+      <button class="icon-btn" id="micBtn" title="Falar com o painel">🎤</button>
+      <button class="icon-btn" id="standbyBtn" title="Modo standby">🖼️</button>
+      <button class="icon-btn" id="settingsBtn" title="Configurações">⚙️</button>
+    </div>
+  </header>
+
+  <section class="grid">
+    <article class="card" id="routineCard">
+      <div class="card-head">
+        <h2>Rotina de hoje</h2>
+        <span class="pill" id="routineProgress">0/0</span>
+      </div>
+      <div class="progress"><div id="routineBar"></div></div>
+      <ul class="list" id="routineList"></ul>
+      <button class="add" data-add="routine">+ Tarefa</button>
+    </article>
+
+    <article class="card" id="agendaCard">
+      <div class="card-head">
+        <h2>Agenda</h2>
+        <span class="pill muted" id="syncState">local</span>
+      </div>
+      <div id="agendaList"></div>
+      <button class="add" data-add="event">+ Compromisso</button>
+    </article>
+
+    <article class="card" id="listsCard">
+      <div class="card-head">
+        <h2>Listas</h2>
+      </div>
+      <div class="tabs" id="listTabs"></div>
+      <form id="quickAdd" class="quick">
+        <input id="quickInput" placeholder="Adicionar item…" autocomplete="off">
+        <button type="submit">+</button>
+      </form>
+      <ul class="list" id="listItems"></ul>
+    </article>
+  </section>
+
+  <div id="voiceToast" class="toast hidden"></div>
+</main>
+
+<!-- Standby -->
+<section id="standby" class="hidden">
+  <div class="slide" id="slideA"></div>
+  <div class="slide" id="slideB"></div>
+  <div class="sb-overlay">
+    <div class="sb-clock">
+      <div id="sbTime">--:--</div>
+      <div id="sbDate"></div>
+    </div>
+    <div class="sb-side">
+      <div class="sb-cal" id="sbCal"></div>
+      <div class="sb-next" id="sbNext"></div>
+    </div>
+  </div>
+  <div class="sb-hint">Toque para voltar</div>
+</section>
+
+<!-- Modal genérico -->
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modalTitle"></h3>
+      <button class="icon-btn small" id="modalClose">✕</button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
