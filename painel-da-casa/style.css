@@ -224,3 +224,13 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
   .more-tile{min-height:110px}
   .rc-body{grid-template-columns:1fr}
 }
+
+/* Reset total */
+.danger-zone{display:flex;align-items:center;justify-content:space-between;gap:14px;border:1px solid #efcfc7;background:#fbefeb;border-radius:16px;padding:14px 16px}
+.dz-title{font-weight:600;margin-bottom:2px}
+.warn-box{display:flex;gap:14px;align-items:flex-start;background:#fbefeb;border:1px solid #efcfc7;border-radius:16px;padding:16px;margin-bottom:16px}
+.warn-box p+p{margin-top:8px}
+.warn-ic{flex:none;width:36px;height:36px;border-radius:50%;background:var(--danger);color:#fff;font-weight:700;font-size:20px;display:flex;align-items:center;justify-content:center}
+.confirm-line{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:15px}
+.confirm-line input{width:20px;height:20px;accent-color:var(--danger)}
+.btn:disabled{opacity:.4;cursor:not-allowed}

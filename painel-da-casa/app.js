@@ -72,7 +72,7 @@
     $('#date').textContent = ld;
     $('#sbDate').textContent = ld;
     var pend = todayRoutine().filter(function (r) { return !isDone(r); }).length;
-    $('#greet').textContent = greeting(d.getHours()) + (pend ? ' Faltam ' + pend + ' tarefa' + (pend > 1 ? 's' : '') + ' hoje.' : ' Tudo feito por hoje.');
+    $('#greet').textContent = greeting(d.getHours()) + (pend ? ' Faltam ' + pend + ' tarefa' + (pend > 1 ? 's' : '') + ' hoje.' : todayRoutine().length ? ' Tudo feito por hoje.' : ' Que tal adicionar sua rotina?');
     if (ymd(d) !== lastDay) { lastDay = ymd(d); today = d; renderAll(); }
     if (d.getSeconds() === 0) renderRoutine();
   }
@@ -109,7 +109,7 @@
     var left = items.length - doneN;
     $('#routineSub').textContent = items.length ? (left ? left + ' para fazer · ' + doneN + ' concluída' + (doneN === 1 ? '' : 's') : 'Tudo concluído por hoje') : '';
     $('#tileRoutine').textContent = doneN + ' de ' + items.length;
-    $('#tileRoutineSub').textContent = left ? 'tarefas feitas' : 'dia completo!';
+    $('#tileRoutineSub').textContent = !items.length ? 'nenhuma tarefa hoje' : left ? 'tarefas feitas' : 'dia completo!';
     $('#routineBar').style.width = (items.length ? doneN / items.length * 100 : 0) + '%';
   }
   $('#routineList').addEventListener('click', function (e) {
@@ -294,7 +294,9 @@
       '<p class="hint">As fotos ficam salvas só neste aparelho.</p><hr>' +
       '<div class="field"><label>Google Agenda — URL do Apps Script</label><input id="sFeed" placeholder="https://script.google.com/macros/s/…/exec" value="' + esc(S.settings.feedUrl) + '"></div>' +
       '<p class="hint">Veja o arquivo LEIAME.md para gerar essa URL em 5 minutos. Os compromissos que vocês criarem no celular aparecem aqui.</p><hr>' +
-      '<div class="row"><button class="btn" id="sSave">Salvar</button><button class="btn ghost" id="sExport">Exportar backup</button><button class="btn ghost" id="sReset">Restaurar exemplo</button></div>',
+      '<div class="row"><button class="btn" id="sSave">Salvar</button><button class="btn ghost" id="sExport">Exportar backup</button><button class="btn ghost" id="sReset">Restaurar exemplo</button></div>' +
+      '<hr><div class="danger-zone"><div><p class="dz-title">Resetar informações</p><p class="hint">Apaga tudo o que está salvo neste aparelho e deixa o painel zerado.</p></div>' +
+      '<button class="btn danger" id="sWipe">Resetar</button></div>',
       function () {
         refreshThumbs();
         $('#sPhotos').onchange = function (e) { addPhotos(e.target.files).then(refreshThumbs); };
@@ -311,9 +313,39 @@
           a.download = 'painel-backup-' + ymd(new Date()) + '.json'; a.click();
         };
         $('#sReset').onclick = function (ev) { if (confirmInline(ev.target)) { S = seed(); save(); renderAll(); closeModal(); } };
+        $('#sWipe').onclick = openWipeConfirm;
       });
   }
   $('#settingsBtn').addEventListener('click', openSettings);
+
+  // reset total, com aviso antes
+  function blankState() {
+    var b = seed();
+    b.routine = []; b.events = []; b.done = {}; b.recipes = [];
+    b.lists = { 'Compras': [], 'Lembretes': [] }; b.activeList = 'Compras';
+    return b;
+  }
+  function openWipeConfirm() {
+    openModal('Apagar todas as informações?',
+      '<div class="warn-box"><div class="warn-ic">!</div><div>' +
+      '<p><strong>Esta ação não pode ser desfeita.</strong></p>' +
+      '<p class="hint">Serão apagados deste aparelho: tarefas da rotina, compromissos, listas, receitas, fotos do standby e configurações (incluindo o link do Google Agenda). Os eventos que estão no Google Agenda continuam lá.</p>' +
+      '<p class="hint">Se quiser guardar uma cópia, use "Exportar backup" antes.</p></div></div>' +
+      '<label class="confirm-line"><input type="checkbox" id="wipeOk"> Entendo que tudo será apagado</label>' +
+      '<div class="row"><button class="btn ghost" id="wipeCancel">Cancelar</button><button class="btn danger" id="wipeGo" disabled>Sim, apagar tudo</button></div>',
+      function () {
+        $('#wipeOk').onchange = function () { $('#wipeGo').disabled = !this.checked; };
+        $('#wipeCancel').onclick = openSettings;
+        $('#wipeGo').onclick = function () {
+          T.end = 0; T.paused = 0; T.total = 0; stopRing(); W = { start: 0, acc: 0, running: false, laps: [] }; updatePill();
+          S = blankState(); save();
+          clearPhotos().then(function () {
+            renderAll(); tick(); resetIdle(); closeModal();
+            toast('Pronto! Todas as informações foram apagadas.');
+          });
+        };
+      });
+  }
 
   // ---------- fotos (IndexedDB) ----------
   var db = null, photoUrls = [];
