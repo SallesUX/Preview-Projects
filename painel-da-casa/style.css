@@ -234,3 +234,36 @@ hr{border:0;border-top:1px solid var(--line);margin:18px 0}
 .confirm-line{display:flex;align-items:center;gap:10px;margin-bottom:16px;font-size:15px}
 .confirm-line input{width:20px;height:20px;accent-color:var(--danger)}
 .btn:disabled{opacity:.4;cursor:not-allowed}
+
+/* Previsão do tempo */
+.weather{display:block;width:100%;text-align:left;background:var(--paper);border:1px solid var(--line);border-radius:var(--r-md);padding:1.4vh 1vw;color:var(--text)}
+.wi{width:24px;height:24px;flex:none}
+.wi-sun,.wi-partly{color:#e29a5f}
+.wi-moon{color:#8a7fb5}
+.wi-rain,.wi-storm{color:#6f97ad}
+.wi-cloud,.wi-fog,.wi-snow{color:#9a9389}
+.w-now{display:flex;align-items:center;gap:10px}
+.w-now .wi{width:40px;height:40px}
+.w-temp{font-size:clamp(28px,4.6vh,40px);font-weight:300;letter-spacing:-.02em;line-height:1}
+.w-info{display:flex;flex-direction:column;min-width:0;line-height:1.3}
+.w-info b{font-size:14px;font-weight:600}
+.w-info span{font-size:12px;color:var(--muted)}
+.w-days{display:flex;justify-content:space-between;margin-top:1.2vh;padding-top:1.1vh;border-top:1px solid var(--line)}
+.w-day{display:flex;flex-direction:column;align-items:center;gap:2px;font-size:12px}
+.w-day span{color:var(--muted)}
+.w-day .wi{width:20px;height:20px;margin:2px 0}
+.w-day b{font-weight:600}
+.w-day em{font-style:normal;color:var(--soft)}
+.w-empty{display:flex;align-items:center;gap:10px;font-size:13px;color:var(--muted)}
+.w-stale{font-size:11px;color:var(--soft);margin-top:6px}
+#sbWeather{display:flex;align-items:center;gap:8px;font-size:clamp(16px,2.6vh,24px);margin-top:1vh;opacity:.9}
+#sbWeather .wi{width:28px;height:28px}
+.photo #sbWeather .wi{color:#fff}
+@media (max-height:700px) and (min-width:901px){
+  .side{gap:1.2vh}
+  .w-days{display:none}
+  .tile{min-height:0;padding:1.3vh 1vw}
+  .tile-sub,.tile-art{display:none}
+  .greet{display:none}
+}
+@media (max-width:900px){ .weather{grid-column:1 / -1} }

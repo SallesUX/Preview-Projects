@@ -52,7 +52,8 @@
       activeList: 'Compras',
       settings: { standbyMin: 3, slideSec: 12, feedUrl: '', voiceRate: 1 },
       gcal: { events: [], at: 0 },
-      recipes: seedRecipes()
+      recipes: seedRecipes(),
+      weather: {}
     };
   }
   var S;
@@ -292,6 +293,7 @@
       '<div class="thumbs" id="sThumbs"></div>' +
       '<div class="row"><button class="btn ghost" id="sClearPh">Remover todas as fotos</button></div>' +
       '<p class="hint">As fotos ficam salvas só neste aparelho.</p><hr>' +
+      '<div class="field"><label>Cidade da previsão do tempo</label><input id="sCity" placeholder="Ex.: Campinas, SP (vazio = usar localização do aparelho)" value="' + esc(S.settings.weatherCity || '') + '"></div><hr>' +
       '<div class="field"><label>Google Agenda — URL do Apps Script</label><input id="sFeed" placeholder="https://script.google.com/macros/s/…/exec" value="' + esc(S.settings.feedUrl) + '"></div>' +
       '<p class="hint">Veja o arquivo LEIAME.md para gerar essa URL em 5 minutos. Os compromissos que vocês criarem no celular aparecem aqui.</p><hr>' +
       '<div class="row"><button class="btn" id="sSave">Salvar</button><button class="btn ghost" id="sExport">Exportar backup</button><button class="btn ghost" id="sReset">Restaurar exemplo</button></div>' +
@@ -305,6 +307,7 @@
           S.settings.standbyMin = Math.max(0, +$('#sMin').value || 0);
           S.settings.slideSec = Math.max(4, +$('#sSec').value || 12);
           S.settings.feedUrl = $('#sFeed').value.trim();
+          var nc = $('#sCity').value.trim(); if (nc !== (S.settings.weatherCity || '')) { S.settings.weatherCity = nc; S.weather = {}; renderWeather(); loadWeather(); }
           save(); closeModal(); syncGoogle(); renderAgenda(); resetIdle();
         };
         $('#sExport').onclick = function () {
@@ -340,7 +343,7 @@
           T.end = 0; T.paused = 0; T.total = 0; stopRing(); W = { start: 0, acc: 0, running: false, laps: [] }; updatePill();
           S = blankState(); save();
           clearPhotos().then(function () {
-            renderAll(); tick(); resetIdle(); closeModal();
+            renderAll(); tick(); resetIdle(); closeModal(); renderWeather(); loadWeather();
             toast('Pronto! Todas as informações foram apagadas.');
           });
         };
@@ -489,6 +492,7 @@
   function handleCommand(raw) {
     var t = norm(raw).replace(/[.!?]/g, '').trim(), m;
     toast('🗣️ "' + raw + '"', 2500);
+    if (/(como (esta|vai|ta) o tempo|previsao do tempo|vai chover|temperatura|clima)/.test(t) && !/^(pesquis|procur|busc|google)/.test(t)) return say(weatherSpeech(t));
     if (extrasCommand(t)) return;
     // "adicionar leite e ovos na lista de compras"
     if ((m = t.match(/^(?:adiciona(?:r)?|adicione|coloca(?:r)?|coloque|inclui(?:r)?|bota(?:r)?)\s+(.+?)\s+(?:na|a|à|nas|em)\s+(?:lista\s+(?:de\s+|do\s+|da\s+)?)?(.+)$/))) {
@@ -785,6 +789,85 @@
     }
     return false;
   }
+
+  // ---------- previsão do tempo (Open-Meteo, gratuito e sem chave) ----------
+  if (!S.weather) S.weather = {};
+  var WMO = function (c) {
+    if (c === 0) return { i: 'sun', t: 'Céu limpo' };
+    if (c === 1) return { i: 'partly', t: 'Poucas nuvens' };
+    if (c === 2) return { i: 'partly', t: 'Parcialmente nublado' };
+    if (c === 3) return { i: 'cloud', t: 'Nublado' };
+    if (c === 45 || c === 48) return { i: 'fog', t: 'Neblina' };
+    if (c >= 51 && c <= 57) return { i: 'rain', t: 'Garoa' };
+    if ((c >= 61 && c <= 67) || (c >= 80 && c <= 82)) return { i: 'rain', t: c >= 80 ? 'Pancadas de chuva' : 'Chuva' };
+    if ((c >= 71 && c <= 77) || c === 85 || c === 86) return { i: 'snow', t: 'Neve' };
+    if (c >= 95) return { i: 'storm', t: 'Tempestade' };
+    return { i: 'cloud', t: '—' };
+  };
+  function wIcon(code, isDay) {
+    var w = WMO(code), n = w.i === 'sun' && isDay === 0 ? 'moon' : w.i;
+    return '<svg class="wi wi-' + n + '"><use xlink:href="#w-' + n + '" href="#w-' + n + '"/></svg>';
+  }
+  function getJSON(url) { return fetch(url).then(function (r) { if (!r.ok) throw new Error(r.status); return r.json(); }); }
+  function locate() {
+    var W0 = S.weather, city = (S.settings.weatherCity || '').trim();
+    if (city) {
+      if (W0.city === city && W0.lat != null) return Promise.resolve(W0);
+      return getJSON('https://geocoding-api.open-meteo.com/v1/search?count=1&language=pt&name=' + encodeURIComponent(city)).then(function (g) {
+        var r = g.results && g.results[0]; if (!r) throw new Error('cidade');
+        W0.city = city; W0.lat = r.latitude; W0.lon = r.longitude; W0.name = r.name; save(); return W0;
+      });
+    }
+    if (W0.lat != null && !W0.city) return Promise.resolve(W0);
+    return new Promise(function (res, rej) {
+      if (!navigator.geolocation) return rej(new Error('geo'));
+      navigator.geolocation.getCurrentPosition(function (p) {
+        W0.city = ''; W0.lat = +p.coords.latitude.toFixed(3); W0.lon = +p.coords.longitude.toFixed(3); W0.name = 'Sua região'; save(); res(W0);
+      }, function () { rej(new Error('geo')); }, { timeout: 15000, maximumAge: 3600000 });
+    });
+  }
+  function loadWeather() {
+    locate().then(function (L) {
+      return getJSON('https://api.open-meteo.com/v1/forecast?latitude=' + L.lat + '&longitude=' + L.lon +
+        '&current=temperature_2m,apparent_temperature,relative_humidity_2m,weather_code,is_day' +
+        '&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max&timezone=auto&forecast_days=5');
+    }).then(function (d) {
+      S.weather.data = d; S.weather.at = Date.now(); S.weather.err = ''; save(); renderWeather();
+    }).catch(function (e) {
+      S.weather.err = e.message === 'geo' ? 'geo' : e.message === 'cidade' ? 'cidade' : 'rede'; renderWeather();
+    });
+  }
+  function renderWeather() {
+    var el = $('#weather'), W0 = S.weather, d = W0.data;
+    if (!d || !d.current) {
+      var msg = W0.err === 'cidade' ? 'Cidade não encontrada. Ajuste em ⚙️.' : W0.err === 'geo' ? 'Defina sua cidade em ⚙️ para ver a previsão.' : W0.err ? 'Sem conexão para a previsão.' : 'Carregando previsão…';
+      el.innerHTML = '<div class="w-empty">' + wIcon(2, 1) + '<span>' + msg + '</span></div>';
+      $('#sbWeather').textContent = '';
+      return;
+    }
+    var c = d.current, dl = d.daily, w = WMO(c.weather_code);
+    var days = dl.time.slice(1, 5).map(function (t, i) {
+      var p = t.split('-'), dt = new Date(+p[0], +p[1] - 1, +p[2]);
+      return '<div class="w-day"><span>' + (i === 0 ? 'Amanhã' : DIAS[dt.getDay()]) + '</span>' + wIcon(dl.weather_code[i + 1], 1) +
+        '<b>' + Math.round(dl.temperature_2m_max[i + 1]) + '°</b><em>' + Math.round(dl.temperature_2m_min[i + 1]) + '°</em></div>';
+    }).join('');
+    var rain = dl.precipitation_probability_max ? dl.precipitation_probability_max[0] : null;
+    el.innerHTML = '<div class="w-now">' + wIcon(c.weather_code, c.is_day) +
+      '<div class="w-temp">' + Math.round(c.temperature_2m) + '°</div>' +
+      '<div class="w-info"><b>' + w.t + '</b><span>' + esc(W0.name || '') + '</span><span>' + Math.round(dl.temperature_2m_max[0]) + '° / ' + Math.round(dl.temperature_2m_min[0]) + '°' +
+      (rain != null ? ' · ' + rain + '% chuva' : '') + '</span></div></div>' +
+      '<div class="w-days">' + days + '</div>' +
+      (W0.err ? '<p class="w-stale">Sem conexão · atualizado às ' + hm(new Date(W0.at)) + '</p>' : '');
+    $('#sbWeather').innerHTML = wIcon(c.weather_code, c.is_day) + Math.round(c.temperature_2m) + '° · ' + w.t;
+  }
+  function weatherSpeech(t) {
+    var d = S.weather.data; if (!d || !d.current) return 'Ainda não tenho a previsão. Defina sua cidade nas configurações.';
+    var dl = d.daily, i = /amanha/.test(t) ? 1 : 0, rain = dl.precipitation_probability_max ? dl.precipitation_probability_max[i] : null;
+    if (i === 1) return 'Amanhã: ' + WMO(dl.weather_code[1]).t.toLowerCase() + ', máxima de ' + Math.round(dl.temperature_2m_max[1]) + ' e mínima de ' + Math.round(dl.temperature_2m_min[1]) + ' graus' + (rain != null ? ', com ' + rain + '% de chance de chuva.' : '.');
+    return 'Agora faz ' + Math.round(d.current.temperature_2m) + ' graus, ' + WMO(d.current.weather_code).t.toLowerCase() + '. Hoje a máxima é ' + Math.round(dl.temperature_2m_max[0]) + ' e a mínima ' + Math.round(dl.temperature_2m_min[0]) + (rain != null ? ', ' + rain + '% de chance de chuva.' : '.');
+  }
+  $('#weather').addEventListener('click', loadWeather);
+  renderWeather(); loadWeather(); setInterval(loadWeather, 30 * 60000);
 
   // ---------- início ----------
   function renderAll() { renderRoutine(); renderAgenda(); renderLists(); }

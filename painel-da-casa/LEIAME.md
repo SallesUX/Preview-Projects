@@ -19,6 +19,7 @@ Funciona também no computador e no celular.
   - "timer de 10 minutos" / "parar timer" / "quanto tempo falta" / "iniciar cronômetro"
   - "pesquisar previsão do tempo"
   - "receita de bolo de cenoura" / "receitas"
+- **Previsão do tempo**: temperatura agora, máx/mín, chance de chuva e os próximos 4 dias (dados do Open-Meteo, grátis e sem cadastro). Usa a localização do aparelho ou a cidade definida em ⚙️. Toque no widget para atualizar. Por voz: "como está o tempo", "vai chover amanhã".
 - **Mais funções** (botão de quadradinhos):
   - **Timer e cronômetro**: atalhos de 1 a 60 min, pausa e alarme sonoro. O tempo aparece no topo da tela mesmo com a janela fechada.
   - **Pesquisa na web**: abre o Google numa nova aba.
