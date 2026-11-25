@@ -1,0 +1,11 @@
+{
+  "name": "Painel da Casa",
+  "short_name": "Painel",
+  "start_url": "./index.html",
+  "display": "fullscreen",
+  "orientation": "landscape",
+  "background_color": "#f4efe8",
+  "theme_color": "#f4efe8",
+  "lang": "pt-BR",
+  "icons": [{ "src": "icon.svg", "sizes": "any", "type": "image/svg+xml", "purpose": "any maskable" }]
+}

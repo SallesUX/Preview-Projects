@@ -1,0 +1,152 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f4efe8">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<title>Painel da Casa</title>
+<link rel="manifest" href="manifest.json">
+<link rel="icon" href="icon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+<svg width="0" height="0" style="position:absolute" aria-hidden="true">
+  <defs>
+    <symbol id="i-mic" viewBox="0 0 24 24"><rect x="9" y="3" width="6" height="11" rx="3"/><path d="M5 11a7 7 0 0 0 14 0M12 18v3"/></symbol>
+    <symbol id="i-photo" viewBox="0 0 24 24"><rect x="3" y="4" width="18" height="16" rx="3"/><circle cx="9" cy="10" r="2"/><path d="M21 16l-5-5-9 9"/></symbol>
+    <symbol id="i-gear" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3"/><path d="M19.4 15a1.7 1.7 0 0 0 .3 1.8l.1.1a2 2 0 1 1-2.8 2.8l-.1-.1a1.7 1.7 0 0 0-1.8-.3 1.7 1.7 0 0 0-1 1.5V21a2 2 0 1 1-4 0v-.1a1.7 1.7 0 0 0-1.1-1.5 1.7 1.7 0 0 0-1.8.3l-.1.1a2 2 0 1 1-2.8-2.8l.1-.1a1.7 1.7 0 0 0 .3-1.8 1.7 1.7 0 0 0-1.5-1H3a2 2 0 1 1 0-4h.1a1.7 1.7 0 0 0 1.5-1.1 1.7 1.7 0 0 0-.3-1.8l-.1-.1a2 2 0 1 1 2.8-2.8l.1.1a1.7 1.7 0 0 0 1.8.3H9a1.7 1.7 0 0 0 1-1.5V3a2 2 0 1 1 4 0v.1a1.7 1.7 0 0 0 1 1.5 1.7 1.7 0 0 0 1.8-.3l.1-.1a2 2 0 1 1 2.8 2.8l-.1.1a1.7 1.7 0 0 0-.3 1.8V9a1.7 1.7 0 0 0 1.5 1H21a2 2 0 1 1 0 4h-.1a1.7 1.7 0 0 0-1.5 1z"/></symbol>
+    <symbol id="i-plus" viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></symbol>
+    <symbol id="i-check" viewBox="0 0 24 24"><path d="M5 12.5l4.5 4.5L19 7.5"/></symbol>
+    <symbol id="i-edit" viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4z"/></symbol>
+    <symbol id="i-x" viewBox="0 0 24 24"><path d="M6 6l12 12M18 6L6 18"/></symbol>
+    <symbol id="i-clock" viewBox="0 0 24 24"><circle cx="12" cy="12" r="9"/><path d="M12 7v5l3 2"/></symbol>
+    <symbol id="i-cal" viewBox="0 0 24 24"><rect x="3" y="5" width="18" height="16" rx="3"/><path d="M3 10h18M8 3v4M16 3v4"/></symbol>
+    <symbol id="i-grid" viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="2"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="2"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="2"/></symbol>
+    <symbol id="i-search" viewBox="0 0 24 24"><circle cx="11" cy="11" r="6.5"/><path d="M20 20l-4.2-4.2"/></symbol>
+    <symbol id="i-book" viewBox="0 0 24 24"><path d="M5 4.5h9a3 3 0 0 1 3 3V20H8a3 3 0 0 1-3-3V4.5z"/><path d="M5 17a3 3 0 0 1 3-3h9M9 8.5h4"/></symbol>
+    <symbol id="w-sun" viewBox="0 0 24 24"><circle cx="12" cy="12" r="4.2"/><path d="M12 2.5v2M12 19.5v2M2.5 12h2M19.5 12h2M5.3 5.3l1.4 1.4M17.3 17.3l1.4 1.4M5.3 18.7l1.4-1.4M17.3 6.7l1.4-1.4"/></symbol>
+    <symbol id="w-moon" viewBox="0 0 24 24"><path d="M20 14.5A8 8 0 0 1 9.5 4a8 8 0 1 0 10.5 10.5z"/></symbol>
+    <symbol id="w-cloud" viewBox="0 0 24 24"><path d="M7 18.5h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.1 9.6 4.5 4.5 0 0 0 7 18.5z"/></symbol>
+    <symbol id="w-partly" viewBox="0 0 24 24"><path d="M8.5 6.2A4 4 0 0 1 15 7.6M5 9.5a4 4 0 0 1 .3-1.1M8.5 2.8v1.4M3.3 4.6l1 1M2.2 9.6h1.4"/><path d="M8 20h9a3.5 3.5 0 0 0 .5-6.96 5 5 0 0 0-9.6-.8A3.9 3.9 0 0 0 8 20z"/></symbol>
+    <symbol id="w-rain" viewBox="0 0 24 24"><path d="M7 15.5h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.1 6.6 4.5 4.5 0 0 0 7 15.5z"/><path d="M8.5 18.5l-1 2.5M12.5 18.5l-1 2.5M16.5 18.5l-1 2.5"/></symbol>
+    <symbol id="w-storm" viewBox="0 0 24 24"><path d="M7 15h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.1 6.1 4.5 4.5 0 0 0 7 15z"/><path d="M12.5 15l-2 3.5h3l-2 3.5"/></symbol>
+    <symbol id="w-snow" viewBox="0 0 24 24"><path d="M7 14.5h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.1 5.6 4.5 4.5 0 0 0 7 14.5z"/><path d="M8 18h.01M12 19.5h.01M16 18h.01M10 21.5h.01M14 21.5h.01"/></symbol>
+    <symbol id="w-fog" viewBox="0 0 24 24"><path d="M7 13h10a4 4 0 0 0 .6-7.95A5.5 5.5 0 0 0 7.1 4.1 4.5 4.5 0 0 0 7 13z"/><path d="M4 16.5h16M6 20h12"/></symbol>
+    <symbol id="i-cart" viewBox="0 0 24 24"><path d="M3 4h2l2.4 11h10.2L20 8H6.2"/><circle cx="9" cy="19.5" r="1.3"/><circle cx="17" cy="19.5" r="1.3"/></symbol>
+  </defs>
+</svg>
+
+<div id="app">
+<main id="home">
+  <!-- Coluna 1: relógio e resumo -->
+  <aside class="col side">
+    <div class="brand">
+      <span class="logo"><svg><use xlink:href="#i-clock" href="#i-clock"/></svg></span>
+      <span>Nossa Casa</span>
+    </div>
+    <div class="clock">
+      <div id="time">--:--</div>
+      <div id="date">&nbsp;</div>
+    </div>
+    <p class="greet" id="greet"></p>
+    <button class="weather" id="weather" title="Atualizar previsão"></button>
+
+    <div class="tile tile-peach">
+      <div class="tile-art"></div>
+      <p class="tile-label">Rotina</p>
+      <p class="tile-big" id="tileRoutine">0 de 0</p>
+      <p class="tile-sub" id="tileRoutineSub">tarefas feitas</p>
+      <div class="ring"><div id="routineBar"></div></div>
+    </div>
+    <div class="tile tile-sage">
+      <div class="tile-art"></div>
+      <p class="tile-label">Próximo</p>
+      <p class="tile-big" id="tileNext">—</p>
+      <p class="tile-sub" id="tileNextSub"></p>
+    </div>
+
+    <div class="actions">
+      <button class="round dark" id="micBtn" title="Falar com o painel"><svg><use xlink:href="#i-mic" href="#i-mic"/></svg></button>
+      <button class="round" id="standbyBtn" title="Modo standby"><svg><use xlink:href="#i-photo" href="#i-photo"/></svg></button>
+      <button class="round" id="moreBtn" title="Mais funções"><svg><use xlink:href="#i-grid" href="#i-grid"/></svg></button>
+      <button class="round" id="settingsBtn" title="Configurações"><svg><use xlink:href="#i-gear" href="#i-gear"/></svg></button>
+    </div>
+  </aside>
+
+  <!-- Coluna 2: rotina -->
+  <section class="col paper" id="routineCard">
+    <div class="card-head">
+      <div>
+        <h2>Rotina de hoje</h2>
+        <p class="sub" id="routineSub"></p>
+      </div>
+      <button class="round dark" data-add="routine" title="Nova tarefa"><svg><use xlink:href="#i-plus" href="#i-plus"/></svg></button>
+    </div>
+    <ul class="list" id="routineList"></ul>
+  </section>
+
+  <!-- Coluna 3: agenda + listas -->
+  <section class="col stack">
+    <div class="block" id="agendaCard">
+      <div class="card-head">
+        <h3>Agenda</h3>
+        <div class="row-tight">
+          <span class="chip" id="syncState">local</span>
+          <button class="link" data-add="event">+ Novo</button>
+        </div>
+      </div>
+      <div id="agendaList"></div>
+    </div>
+
+    <div class="block grow" id="listsCard">
+      <div class="card-head">
+        <h3>Listas</h3>
+      </div>
+      <div class="tabs" id="listTabs"></div>
+      <form id="quickAdd" class="quick">
+        <input id="quickInput" placeholder="Adicionar item…" autocomplete="off">
+        <button type="submit" class="round dark small" aria-label="Adicionar"><svg><use xlink:href="#i-plus" href="#i-plus"/></svg></button>
+      </form>
+      <ul class="list compact" id="listItems"></ul>
+    </div>
+  </section>
+</main>
+</div>
+
+<div id="voiceToast" class="toast hidden"></div>
+<button id="timerPill" class="timer-pill hidden"><svg><use xlink:href="#i-clock" href="#i-clock"/></svg><span id="timerPillText"></span></button>
+
+<!-- Standby -->
+<section id="standby" class="hidden">
+  <div class="slide" id="slideA"></div>
+  <div class="slide" id="slideB"></div>
+  <div class="sb-overlay">
+    <div class="sb-clock">
+      <div id="sbTime">--:--</div>
+      <div id="sbDate"></div>
+      <div id="sbWeather"></div>
+    </div>
+    <div class="sb-side">
+      <div class="sb-card sb-cal" id="sbCal"></div>
+      <div class="sb-card sb-next" id="sbNext"></div>
+    </div>
+  </div>
+  <div class="sb-hint">Toque para voltar</div>
+</section>
+
+<!-- Modal genérico -->
+<div id="modal" class="modal hidden">
+  <div class="modal-box">
+    <div class="modal-head">
+      <h3 id="modalTitle"></h3>
+      <button class="round small" id="modalClose" aria-label="Fechar"><svg><use xlink:href="#i-x" href="#i-x"/></svg></button>
+    </div>
+    <div id="modalBody"></div>
+  </div>
+</div>
+
+<script src="app.js"></script>
+</body>
+</html>
